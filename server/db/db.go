@@ -56,14 +56,16 @@ func CloseDB() {
 			log.Fatal("Failed to close DB connection:", err)
 		}
 	}
+
+	fmt.Println("Closed the database connection")
 }
 
 func CreateTable(db *sql.DB) {
 	query := `
 	CREATE TABLE IF NOT EXISTS users (
-		id SERIAL PRIMARY KEY,
-		firstName TEXT NOT NULL,
-		lastName TEXT NOT NULL,
+		user_id SERIAL PRIMARY KEY,
+		first_name TEXT NOT NULL,
+		last_name TEXT NOT NULL,
 		password TEXT NOT NULL,
 		email TEXT NOT NULL UNIQUE
 	)`
@@ -76,9 +78,27 @@ func CreateTable(db *sql.DB) {
 	fmt.Println("Table created successfully!")
 }
 
+func CreateJTITable(db *sql.DB) {
+	query := `
+	CREATE TABLE refresh_tokens (
+    	token_id SERIAL PRIMARY KEY,
+    	user_id INT NOT NULL,
+    	jti TEXT NOT NULL UNIQUE,
+    	expiry TIMESTAMPTZ NOT NULL,
+    	is_revoked BOOLEAN DEFAULT FALSE
+	);`
+
+	_, err := db.Exec(query)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("Table created successfully!")
+}
+
 func InsertUser(user structs.User) structs.User {
 	ConnectDB()
-	query := `INSERT INTO users (email, firstName, lastName, password) VALUES ($1, $2, $3, $4) RETURNING id`
+	query := `INSERT INTO users (email, first_name, last_name, password) VALUES ($1, $2, $3, $4) RETURNING user_id`
 	// Insert the user into the database
 	_, err := DB.Exec(query, user.Email, user.FirstName, user.LastName, user.Password)
 	if err != nil {
@@ -88,14 +108,14 @@ func InsertUser(user structs.User) structs.User {
 
 	// Get the ID of the newly inserted user
 	var id int
-	err = DB.QueryRow("SELECT id FROM users ORDER BY id DESC LIMIT 1").Scan(&id)
+	err = DB.QueryRow("SELECT user_id FROM users ORDER BY user_id DESC LIMIT 1").Scan(&id)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// Fetch the user data from the database
 	userData := structs.User{}
-	err = DB.QueryRow("SELECT id, email, firstName, lastName FROM users WHERE id = $1", id).Scan(&userData.ID, &userData.Email, &userData.FirstName, &userData.LastName)
+	err = DB.QueryRow("SELECT user_id, email, first_name, last_name FROM users WHERE user_id = $1", id).Scan(&userData.ID, &userData.Email, &userData.FirstName, &userData.LastName)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -107,8 +127,28 @@ func InsertUser(user structs.User) structs.User {
 
 }
 
+func GetUserByID(userID int64) (structs.User, error) {
+	ConnectDB()
+	query := `SELECT user_id, email, first_name, last_name FROM users WHERE user_id = $1`
+	row := DB.QueryRow(query, userID)
+
+	user := structs.User{}
+	err := row.Scan(&user.ID, &user.Email, &user.FirstName, &user.LastName)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return user, fmt.Errorf("user not found")
+		}
+		log.Fatal(err)
+		return user, err
+	}
+
+	defer CloseDB()
+
+	return user, nil
+}
+
 func GetUsers(db *sql.DB) {
-	rows, err := db.Query("SELECT id, name, email FROM users")
+	rows, err := db.Query("SELECT user_id, name, email FROM users")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -130,3 +170,18 @@ func GetUsers(db *sql.DB) {
 		log.Fatal(err)
 	}
 }
+
+func StoreJTI(jti string, userID int, refreshTokenExp string) error {
+	ConnectDB()
+	query := `INSERT INTO refresh_tokens (user_id, jti, expiry, is_revoked) VALUES ($1, $2, $3, $4)`
+	_, err := DB.Exec(query, userID, jti, refreshTokenExp, false)
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+
+	defer CloseDB()
+
+	return nil
+}
+

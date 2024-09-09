@@ -6,6 +6,7 @@ import (
 
 	"github.com/alexey-petrov/go-server/server/auth"
 	"github.com/alexey-petrov/go-server/server/db"
+	jwtService "github.com/alexey-petrov/go-server/server/jwt"
 	"github.com/alexey-petrov/go-server/server/structs"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -27,6 +28,7 @@ func establishDBConnection() {
 	defer database.Close()
 
 	db.CreateTable(database)
+	db.CreateJTITable(database)
 
 	// Close the database connection when done
 	defer db.CloseDB()
@@ -174,6 +176,19 @@ func initEndpoints(app *fiber.App, todos []structs.Todo) {
 		return c.JSON(fiber.Map{
 			"token": token,
 		})
+	})
+
+	app.Post("api/refresh", refreshAccessTokenHandler)
+}
+
+// Handler function for refreshing the access token using the refresh token
+func refreshAccessTokenHandler(c *fiber.Ctx) error {
+	accessToken, refreshToken, _ := jwtService.RefreshAccessToken(c)
+
+	// Return the new tokens as JSON response
+	return c.JSON(fiber.Map{
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
 	})
 }
 
