@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/alexey-petrov/go-server/server/structs"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq" // PostgreSQL driver
 )
@@ -61,7 +62,9 @@ func CreateTable(db *sql.DB) {
 	query := `
 	CREATE TABLE IF NOT EXISTS users (
 		id SERIAL PRIMARY KEY,
-		name TEXT NOT NULL,
+		firstName TEXT NOT NULL,
+		lastName TEXT NOT NULL,
+		password TEXT NOT NULL,
 		email TEXT NOT NULL UNIQUE
 	)`
 
@@ -73,14 +76,35 @@ func CreateTable(db *sql.DB) {
 	fmt.Println("Table created successfully!")
 }
 
-func InsertUser(db *sql.DB, name, email string) {
-	query := `INSERT INTO users (name, email) VALUES ($1, $2)`
-	_, err := db.Exec(query, name, email)
+func InsertUser(user structs.User) structs.User {
+	ConnectDB()
+	query := `INSERT INTO users (email, firstName, lastName, password) VALUES ($1, $2, $3, $4) RETURNING id`
+	// Insert the user into the database
+	_, err := DB.Exec(query, user.Email, user.FirstName, user.LastName, user.Password)
+	if err != nil {
+
+		log.Fatal(err)
+	}
+
+	// Get the ID of the newly inserted user
+	var id int
+	err = DB.QueryRow("SELECT id FROM users ORDER BY id DESC LIMIT 1").Scan(&id)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Println("User inserted successfully!")
+	// Fetch the user data from the database
+	userData := structs.User{}
+	err = DB.QueryRow("SELECT id, email, firstName, lastName FROM users WHERE id = $1", id).Scan(&userData.ID, &userData.Email, &userData.FirstName, &userData.LastName)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer CloseDB()
+
+	// Return the user data
+	return userData
+
 }
 
 func GetUsers(db *sql.DB) {

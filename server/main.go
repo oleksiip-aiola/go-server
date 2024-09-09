@@ -4,20 +4,14 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/alexey-petrov/go-server/server/auth"
 	"github.com/alexey-petrov/go-server/server/db"
+	"github.com/alexey-petrov/go-server/server/structs"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 )
 
-type Todo struct {
-	ID int `json:"id"`
-	Title string `json:"title"`
-	Done bool `json:"done"`
-	Body string `json:"body"`
-}
-
-
-func findTodoIndexByID(id int, todos []Todo) int {
+func findTodoIndexByID(id int, todos []structs.Todo) int {
     for i, todo := range todos {
         if todo.ID == id {
             return i
@@ -26,16 +20,13 @@ func findTodoIndexByID(id int, todos []Todo) int {
     return -1
 }
 
-func initDBConnection() {
+func establishDBConnection() {
 	// Initialize DB connection
 	database := db.ConnectDB()
 
 	defer database.Close()
 
 	db.CreateTable(database)
-	db.InsertUser(database, "John Doe", "john.doe@example.com")
-
-	db.GetUsers(database)
 
 	// Close the database connection when done
 	defer db.CloseDB()
@@ -43,7 +34,9 @@ func initDBConnection() {
 
 
 func main() {
-	initDBConnection()
+	// Connect to the database
+	establishDBConnection()
+
 	fmt.Println("Hello, Test")
 	app := fiber.New();
 
@@ -52,13 +45,13 @@ func main() {
 		AllowHeaders: "Origin, Content-Type, Accept",
 	}))
 
-	todos := []Todo{}
+	todos := []structs.Todo{}
 
 	initEndpoints(app, todos)
 	handleLogFatal(app)
 }
 
-func initEndpoints(app *fiber.App, todos []Todo) {
+func initEndpoints(app *fiber.App, todos []structs.Todo) {
 	app.Get("api/healthcheck", helloHandler)
 
 	app.Get("api/todos", func (c *fiber.Ctx) error {
@@ -66,7 +59,7 @@ func initEndpoints(app *fiber.App, todos []Todo) {
 	})
 
 	app.Post("api/todos", func(c *fiber.Ctx) error {
-		todo := &Todo{}
+		todo := &structs.Todo{}
 
 		if err := c.BodyParser(todo); err != nil {
 			return err
@@ -91,12 +84,12 @@ func initEndpoints(app *fiber.App, todos []Todo) {
 
 		if todoIndex == -1 {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-				"error": "Todo not found",
+				"error": "structs.Todo not found",
 			})
 		}
 
 		
-		todo := &Todo{ID: id}
+		todo := &structs.Todo{ID: id}
 
 		if err := c.BodyParser(todo); err != nil {
 			return err
@@ -112,7 +105,7 @@ func initEndpoints(app *fiber.App, todos []Todo) {
 			}
 
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"error": "Todo is missing fields",
+				"error": "structs.Todo is missing fields",
 				"fields": missingFields,
 			})
 		}
@@ -134,7 +127,7 @@ func initEndpoints(app *fiber.App, todos []Todo) {
 
 		if todoIndex == -1 {
             return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-                "error": "Todo not found",
+                "error": "structs.Todo not found",
             })
         }
 		
@@ -154,7 +147,7 @@ func initEndpoints(app *fiber.App, todos []Todo) {
 
 		if todoIndex == -1 {
 			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-				"error": "Todo not found",
+				"error": "structs.Todo not found",
 			})
 		}
 		
@@ -163,6 +156,25 @@ func initEndpoints(app *fiber.App, todos []Todo) {
 		return c.JSON(todos)
 	})
 	
+	app.Post("api/auth", func(c *fiber.Ctx) error {
+
+		user := &structs.User{}
+
+		if err := c.BodyParser(user); err != nil {
+			return err
+		}
+
+		token, err := auth.Auth(*user)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "Failed togenerate JWT",
+			})
+		}
+
+		return c.JSON(fiber.Map{
+			"token": token,
+		})
+	})
 }
 
 func handleLogFatal(app *fiber.App) {

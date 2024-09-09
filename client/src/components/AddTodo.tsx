@@ -26,6 +26,21 @@ export const AddTodo = ({ mutate }: { mutate: KeyedMutator<Todo[]> }) => {
 
     form.reset();
     close();
+
+    await fetch(`${ENDPOINT}/api/auth`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: "test@test.com",
+        firstName: "Joeee",
+        lastName: "Boden",
+        password: "thepassword",
+      }),
+    }).then((r) => {
+      return r.json();
+    });
   };
 
   return (
