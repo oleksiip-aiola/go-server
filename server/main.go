@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/alexey-petrov/go-server/server/db"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 )
@@ -25,10 +26,25 @@ func findTodoIndexByID(id int, todos []Todo) int {
     return -1
 }
 
+func initDBConnection() {
+	// Initialize DB connection
+	database := db.ConnectDB()
+
+	defer database.Close()
+
+	db.CreateTable(database)
+	db.InsertUser(database, "John Doe", "john.doe@example.com")
+
+	db.GetUsers(database)
+
+	// Close the database connection when done
+	defer db.CloseDB()
+}
+
 
 func main() {
+	initDBConnection()
 	fmt.Println("Hello, Test")
-
 	app := fiber.New();
 
 	app.Use(cors.New(cors.Config{
@@ -38,6 +54,11 @@ func main() {
 
 	todos := []Todo{}
 
+	initEndpoints(app, todos)
+	handleLogFatal(app)
+}
+
+func initEndpoints(app *fiber.App, todos []Todo) {
 	app.Get("api/healthcheck", helloHandler)
 
 	app.Get("api/todos", func (c *fiber.Ctx) error {
@@ -142,7 +163,6 @@ func main() {
 		return c.JSON(todos)
 	})
 	
-	handleLogFatal(app)
 }
 
 func handleLogFatal(app *fiber.App) {
