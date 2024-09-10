@@ -1,6 +1,10 @@
 package structs
 
-import "github.com/golang-jwt/jwt/v5"
+import (
+	"os"
+
+	"github.com/golang-jwt/jwt/v5"
+)
 
 type Todo struct {
 	ID int `json:"id"`
@@ -26,5 +30,5 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-var JwtKey = []byte("my_secret_key") // Replace with a strong secret key
-var JwtRefreshKey = []byte("my_refresh_key") // Secret for refresh token
+var JwtKey = []byte(os.Getenv("JWT_SECRET_KEY")) // Replace with a strong secret key
+var JwtRefreshKey = []byte(os.Getenv("JWT_REFRESH_KEY")) // Secret for refresh token
