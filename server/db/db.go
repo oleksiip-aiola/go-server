@@ -9,7 +9,7 @@ import (
 
 	"github.com/alexey-petrov/go-server/server/structs"
 	"github.com/joho/godotenv"
-	_ "github.com/lib/pq" // PostgreSQL driver
+	"github.com/lib/pq"
 )
 
 var DB *sql.DB // Global DB variable to be used across the application
@@ -96,34 +96,41 @@ func CreateJTITable(db *sql.DB) {
 	fmt.Println("Table created successfully!")
 }
 
-func InsertUser(user structs.User) structs.User {
+func InsertUser(user structs.User) (structs.User, error) {
 	ConnectDB()
+
 	query := `INSERT INTO users (email, first_name, last_name, password) VALUES ($1, $2, $3, $4) RETURNING user_id`
 	// Insert the user into the database
 	_, err := DB.Exec(query, user.Email, user.FirstName, user.LastName, user.Password)
 	if err != nil {
-
-		log.Fatal(err)
+		if pqErr, ok := err.(*pq.Error); ok {
+			// Check if the error is due to a unique constraint violation (code 23505)
+			if pqErr.Code == "23505" {
+				// Return a custom error message
+				return structs.User{}, fmt.Errorf("this email is already in use")
+			}
+		}
+		return structs.User{}, err
 	}
 
 	// Get the ID of the newly inserted user
 	var id int
 	err = DB.QueryRow("SELECT user_id FROM users ORDER BY user_id DESC LIMIT 1").Scan(&id)
 	if err != nil {
-		log.Fatal(err)
+		return structs.User{}, err
 	}
 
 	// Fetch the user data from the database
 	userData := structs.User{}
 	err = DB.QueryRow("SELECT user_id, email, first_name, last_name FROM users WHERE user_id = $1", id).Scan(&userData.ID, &userData.Email, &userData.FirstName, &userData.LastName)
 	if err != nil {
-		log.Fatal(err)
+		return structs.User{}, err
 	}
 
 	defer CloseDB()
 
 	// Return the user data
-	return userData
+	return userData, err
 
 }
 

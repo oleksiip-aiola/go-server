@@ -2,7 +2,6 @@ import { Box, List, ThemeIcon } from "@mantine/core";
 import "./App.css";
 import useSWR from "swr";
 import { AddTodo } from "./components/AddTodo";
-import "@mantine/core/styles.css";
 import { CheckCircleFillIcon } from "@primer/octicons-react";
 import Login from "./features/Auth/Login/Login";
 

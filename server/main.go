@@ -158,7 +158,7 @@ func initEndpoints(app *fiber.App, todos []structs.Todo) {
 		return c.JSON(todos)
 	})
 	
-	app.Post("api/auth", func(c *fiber.Ctx) error {
+	app.Post("api/register", func(c *fiber.Ctx) error {
 
 		user := &structs.User{}
 
@@ -167,9 +167,11 @@ func initEndpoints(app *fiber.App, todos []structs.Todo) {
 		}
 
 		token, err := auth.Auth(*user)
+		fmt.Println(err)
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": "Failed togenerate JWT",
+				"error":  "Failed to register",
+				"detail": err.Error(),
 			})
 		}
 
