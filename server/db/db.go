@@ -80,7 +80,7 @@ func CreateTable(db *sql.DB) {
 
 func CreateJTITable(db *sql.DB) {
 	query := `
-	CREATE TABLE refresh_tokens (
+	CREATE TABLE IF NOT EXISTS refresh_tokens (
     	token_id SERIAL PRIMARY KEY,
     	user_id INT NOT NULL,
     	jti TEXT NOT NULL UNIQUE,
@@ -173,6 +173,7 @@ func GetUsers(db *sql.DB) {
 
 func StoreJTI(jti string, userID int, refreshTokenExp string) error {
 	ConnectDB()
+	fmt.Println(userID, jti, refreshTokenExp)
 	query := `INSERT INTO refresh_tokens (user_id, jti, expiry, is_revoked) VALUES ($1, $2, $3, $4)`
 	_, err := DB.Exec(query, userID, jti, refreshTokenExp, false)
 	if err != nil {

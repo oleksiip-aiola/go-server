@@ -33,7 +33,7 @@ export const AddTodo = ({ mutate }: { mutate: KeyedMutator<Todo[]> }) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        email: "test@test.com",
+        email: `${form.values.title}@test.com`,
         firstName: "Joeee",
         lastName: "Boden",
         password: "thepassword",
