@@ -147,6 +147,26 @@ func GetUserByID(userID int64) (structs.User, error) {
 	return user, nil
 }
 
+func GetUserByEmailPassword(email, password string) (structs.User, error) {
+	ConnectDB()
+	query := `SELECT user_id, email, first_name, last_name FROM users WHERE email = $1 AND password = $2`
+	row := DB.QueryRow(query, email, password)
+
+	user := structs.User{}
+	err := row.Scan(&user.ID, &user.Email, &user.FirstName, &user.LastName)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return user, fmt.Errorf("user not found")
+		}
+		log.Fatal(err)
+		return user, err
+	}
+
+	defer CloseDB()
+
+	return user, nil
+}
+
 func GetUsers(db *sql.DB) {
 	rows, err := db.Query("SELECT user_id, name, email FROM users")
 	if err != nil {
@@ -186,3 +206,19 @@ func StoreJTI(jti string, userID int, refreshTokenExp string) error {
 	return nil
 }
 
+func RevokeJWTByUserId(userId int64) error{
+	ConnectDB()
+
+	_, err := DB.Exec("UPDATE refresh_tokens SET is_revoked = true WHERE user_id = $1", userId)
+
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+
+	defer CloseDB()
+
+fmt.Println("Revoked JWT for user ID:", userId)
+
+	return nil
+}

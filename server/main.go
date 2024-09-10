@@ -179,6 +179,26 @@ func initEndpoints(app *fiber.App, todos []structs.Todo) {
 	})
 
 	app.Post("api/refresh", refreshAccessTokenHandler)
+	app.Post("api/login", handleLogin)
+}
+
+func handleLogin(c *fiber.Ctx) error {
+	user := &structs.User{}
+
+	if err := c.BodyParser(user); err != nil {
+		return err
+	}
+
+	token, err := auth.Login(user.Email, user.Password)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to generate JWT",
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"token": token,
+	})
 }
 
 // Handler function for refreshing the access token using the refresh token

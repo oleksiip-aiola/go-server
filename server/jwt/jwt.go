@@ -43,7 +43,7 @@ func GenerateJWT(userId int64) (string, string, error) {
 
 	// Create the token with the specified signing method
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-fmt.Println(token)
+	
 	// Sign the token with the secret key
 	accessToken, err := token.SignedString(structs.JwtKey)
 	if err != nil {

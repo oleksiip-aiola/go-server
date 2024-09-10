@@ -4,6 +4,7 @@ import useSWR from "swr";
 import { AddTodo } from "./components/AddTodo";
 import "@mantine/core/styles.css";
 import { CheckCircleFillIcon } from "@primer/octicons-react";
+import Login from "./features/Auth/Login/Login";
 
 export interface Todo {
   title: string;
@@ -74,6 +75,7 @@ function App() {
         })}
       </List>
       <AddTodo {...{ mutate }} />
+      <Login />
     </Box>
   );
 }
