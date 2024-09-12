@@ -1,13 +1,12 @@
 import axios, { AxiosError, AxiosRequestConfig } from "axios";
 
-import { useCallback, useContext, useRef } from "react";
-import { UserContext } from "../contexts/UserContext";
+import { useCallback, useRef } from "react";
 import { User } from "../types/User";
 
 export const ENDPOINT = "http://localhost:4000";
 
 // Create a reusable Axios instance with withCredentials: true for cookies
-const axiosInstance = axios.create({
+export const axiosInstance = axios.create({
   baseURL: `${ENDPOINT}/api`, // Your API base URL
   withCredentials: true, // Ensures cookies (refresh token) are sent automatically
 });
@@ -100,19 +99,15 @@ const refreshAccessToken = async () => {
 };
 
 export const useFetchData = () => {
-  const { user } = useContext(UserContext);
-
   const localUser = useRef<User | null>(null);
 
   // Main request function that manages access tokens and retries failed requests
   const protectedFetcher = useCallback(
-    ({ url }: { url: string }) =>
+    ({ url, token }: { url: string; token?: string }) =>
       async () => {
         // Attach Authorization header with the access token
         const headers = {
-          Authorization: `Bearer ${
-            user?.accessToken ?? localUser?.current?.accessToken
-          }`,
+          Authorization: `Bearer ${token ?? localUser?.current?.accessToken}`,
         };
 
         // Make the API request using axiosInstance
@@ -120,7 +115,7 @@ export const useFetchData = () => {
 
         return response.data; // If request succeeds, return the data
       },
-    [user?.accessToken]
+    []
   );
 
   const protectedPost =

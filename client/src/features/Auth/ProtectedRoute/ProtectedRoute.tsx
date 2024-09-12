@@ -17,7 +17,6 @@ const ProtectedRoute = ({
     return <Loader />;
   }
 
-  console.log("PROTECTED", loading, user);
   if (!loading && user) {
     // If user exists, render the passed component or the Outlet if no children
     return <Component /> || <Outlet />;

@@ -50,7 +50,7 @@ function Login() {
           default:
             break;
         }
-        console.log(response);
+
         showToast({
           message: "Success",
           title: `Welcome ${response?.firstName} ${response?.lastName}`,
