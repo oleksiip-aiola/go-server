@@ -37,9 +37,7 @@ func SetRefreshCookie(c *fiber.Ctx, jti string) {
 	})
 }
 
-
-// Generate JWT with user ID
-func GenerateJWT(userId int64) (string, string, error) {
+func generateJwtAccessToken(userId int64) (string, structs.User, error) {
 	// Set expiration time for the token
 	expirationTime := time.Now().Add(24 * time.Hour)
 	userData, _ := db.GetUserByID(userId)
@@ -61,9 +59,18 @@ func GenerateJWT(userId int64) (string, string, error) {
 	// Sign the token with the secret key
 	accessToken, err := token.SignedString(structs.JwtKey)
 	if err != nil {
+		return "", structs.User{}, err
+	}
+	fmt.Println("Generated JWT:", accessToken)
+	return accessToken, userData, err
+}
+// Generate JWT with user ID
+func GenerateJWT(userId int64) (string, string, error) {
+	
+	accessToken, userData, err := generateJwtAccessToken(userId)
+	if err != nil {
 		return "", "", err
 	}
-
 	// Set expiration time for Refresh Token (long-lived)
 	refreshTokenExp := time.Now().Add(7 * 24 * time.Hour) // 7 days
 	jti, err := generateJTI()                            // Generate JTI
@@ -82,7 +89,7 @@ func GenerateJWT(userId int64) (string, string, error) {
 		return "", "", err
 	}
 
-	fmt.Println("Generated JWT:", token)
+	fmt.Println("Generated JWT:", accessToken)
 	fmt.Println("Generated REFRESH:", refreshToken)
 
 	// Store the JTI in the database
@@ -260,6 +267,7 @@ func RefreshAccessToken(c *fiber.Ctx) (string, error) {
 func VerifyToken(token string) (*jwt.Token, error) {
 	// Parse the JWT token
 	parsedToken, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
+
 		// Verify the signing method
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("invalid signing method: %v", token.Header["alg"])
@@ -269,7 +277,11 @@ func VerifyToken(token string) (*jwt.Token, error) {
 	})
 
 	if err != nil {
-		return nil, err
+		// Check if the error is due to token expiration
+		if errors.Is(err, jwt.ErrTokenExpired) {
+			return nil, fmt.Errorf("access token expired")
+		}
+		return nil, fmt.Errorf("invalid access token")
 	}
 
 	// Check if the token is valid
@@ -279,11 +291,27 @@ func VerifyToken(token string) (*jwt.Token, error) {
 	// Return the parsed token
 	return parsedToken, nil
 }
-func VerifyAndParseToken(token string) (map[string]interface{}, error) {
+func VerifyAndParseToken(token string, jti string) (map[string]interface{}, error) {
+	fmt.Println(token, jti)
 	// Verify the JWT token
 	verifiedToken, err := VerifyToken(token)
+
 	if err != nil {
-		return nil, err
+		if err.Error() == "access token expired" {
+			// Access token has expired, validate the refresh token
+			newAccessToken, refreshErr := refreshAccessToken(jti)
+			if refreshErr != nil {
+				fmt.Println("Error refreshing access token:", refreshErr)
+			}
+
+			fmt.Println("New access token:", verifiedToken)
+
+			verifiedToken, _ = VerifyToken(newAccessToken)
+		} else {
+			fmt.Println("Access token validation error:", err)
+		}
+	} else {
+		fmt.Println("Access token is valid")
 	}
 
 	// Extract the claims from the verified token
@@ -310,4 +338,29 @@ func VerifyAndParseToken(token string) (map[string]interface{}, error) {
 
 	// Return the claims if everything is valid
 	return claims, nil
+}
+
+func refreshAccessToken(refreshTokenString string) (string, error) {
+	claims := &structs.Claims{}
+
+	// Parse and validate the refresh token
+	token, err := jwt.ParseWithClaims(refreshTokenString, claims, func(token *jwt.Token) (interface{}, error) {
+		return structs.JwtRefreshKey, nil
+	})
+
+	if err != nil {
+		return "", fmt.Errorf("invalid refresh token")
+	}
+
+	if !token.Valid {
+		return "", fmt.Errorf("invalid refresh token")
+	}
+
+	// Generate a new access token
+	newAccessToken, _, err := generateJwtAccessToken(claims.UserID)
+	if err != nil {
+		return "", err
+	}
+
+	return newAccessToken, nil
 }

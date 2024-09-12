@@ -8,7 +8,7 @@ export const Todos = () => {
   const { protectedFetcher } = useFetchData();
   const { data, mutate } = useSWR<Todo[]>(
     "api/todos",
-    protectedFetcher({ url: "api/todos" })
+    protectedFetcher({ url: "todos" })
   );
   console.log("todos");
   return (

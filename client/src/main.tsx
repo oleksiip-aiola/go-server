@@ -13,15 +13,14 @@ import {
   Route,
   RouterProvider,
 } from "react-router-dom";
-import Login from "./features/Auth/Login/Login.tsx";
 import ProtectedRoute from "./features/Auth/ProtectedRoute/ProtectedRoute.tsx";
 import { Todos } from "./features/Todos/index.tsx";
+import ErrorPage from "./features/Error/ErrorPage.tsx";
 
 const router = createBrowserRouter(
   createRoutesFromElements(
     <>
-      <Route path="/" element={<App />}>
-        <Route path="/" element={<Login />} />
+      <Route path="/" element={<App />} errorElement={<ErrorPage />}>
         <Route path="dashboard">
           <Route path="todo" element={<ProtectedRoute component={Todos} />} />
         </Route>

@@ -1,14 +1,19 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 
 	"github.com/alexey-petrov/go-server/server/auth"
 	"github.com/alexey-petrov/go-server/server/db"
 	"github.com/alexey-petrov/go-server/server/jwtService"
 	"github.com/alexey-petrov/go-server/server/structs"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/compress"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 )
 
@@ -38,7 +43,9 @@ func main() {
 	// Connect to the database
 	establishDBConnection()
 
-	app := fiber.New();
+	app := fiber.New(fiber.Config{
+		IdleTimeout: 5,
+	});
 
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: "http://localhost:5173",
@@ -46,10 +53,27 @@ func main() {
 		AllowCredentials: true,
 	}))
 
+	app.Use(compress.New())
+
 	todos := []structs.Todo{}
 
 	initEndpoints(app, todos)
 	handleLogFatal(app)
+
+	go func() {
+		if error := app.Listen(":4000"); error != nil {
+			log.Panic(error)
+		}
+	}()
+
+	c := make(chan os.Signal, 1)
+
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+
+	<-c // Block the main thread until a signal is received/interrupted
+
+	app.Shutdown()
+	fmt.Println("Shutting down the server")
 }
 
 func initEndpoints(app *fiber.App, todos []structs.Todo) {
@@ -67,8 +91,23 @@ func initEndpoints(app *fiber.App, todos []structs.Todo) {
 		// Extract JWT token from Authorization header
 		token := strings.TrimPrefix(authHeader, "Bearer ")
 
+		jti := c.Cookies("refresh_jti")
+		if jti == "" {
+			return fiber.NewError(fiber.StatusUnauthorized, "No refresh token JTI found")
+		}
+
+		_, verificationError := jwtService.VerifyToken(token)
+
+		if verificationError != nil {
+			if verificationError.Error() == "access token expired" {
+				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+					"error": "Invalid JWT token",
+				})
+			}
+		}
+
 		// Verify and parse the JWT token
-		_, err := jwtService.VerifyAndParseToken(token)
+		_, err := jwtService.VerifyAndParseToken(token, jti)
 
 		if err != nil {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
