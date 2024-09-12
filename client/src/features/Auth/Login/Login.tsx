@@ -1,17 +1,20 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { useForm } from "@mantine/form";
 import { TextInput, Button, Modal, Box } from "@mantine/core";
-import { ENDPOINT } from "../../../App";
 import { useDisclosure } from "@mantine/hooks";
 import { useToast } from "../../../hooks/useToast";
+import { UserContext } from "../../../contexts/UserContext";
+import { useNavigate } from "react-router-dom";
+import { User } from "../../../types/User";
 
 function Login() {
   const [opened, { open, close }] = useDisclosure(false);
-  const [error, setError] = useState("");
+  const navigate = useNavigate();
   const { showToast } = useToast();
   const [formState, setFormState] = useState<"login" | "register">("login");
+  const { user, logout, login, register } = useContext(UserContext);
 
-  const form = useForm({
+  const { values, errors, isValid, setFieldValue } = useForm({
     initialValues: {
       email: "123@test.com",
       password: "thepassword",
@@ -19,51 +22,59 @@ function Login() {
       lastname: "",
     },
   });
-
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (form.isValid()) {
-      const endpoint = formState === "login" ? "/api/login" : "/api/register";
-      await fetch(`${ENDPOINT}${endpoint}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: form.values.email,
-          password: form.values.password,
-          firstname: form.values.firstname,
-          lastname: form.values.lastname,
-        }),
-      }).then(async (r) => {
-        if (!r.ok) {
-          const x = await r.json();
-          setError(x.detail);
-          showToast({
-            message: x.detail,
-            title: "Error",
-            icon: "cross",
-            color: "red",
-          });
-          throw new Error("Request failed with status " + r.status);
+    if (isValid()) {
+      let response: User | null = null;
+      try {
+        let authDto;
+
+        switch (formState) {
+          case "login":
+            authDto = {
+              email: values.email,
+              password: values.password,
+            };
+            response = await login(authDto);
+            break;
+          case "register":
+            authDto = {
+              email: values.email,
+              password: values.password,
+              firstName: values.firstname,
+              lastName: values.lastname,
+            };
+            response = await register(authDto);
+            break;
+          default:
+            break;
         }
+        console.log(response);
         showToast({
           message: "Success",
-          title: "Success",
+          title: `Welcome ${response?.firstName} ${response?.lastName}`,
           icon: "check",
           color: "green",
         });
-
-        r.json();
+        navigate("/dashboard/todo");
         close();
-      });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } catch (error: any) {
+        showToast({
+          message: error.message,
+          title: "Error",
+          icon: "cross",
+          color: "red",
+        });
+      }
     }
   };
 
   return (
     <>
       <Button onClick={open}>Log in</Button>
+      {user && <Button onClick={logout}>Log out</Button>}
 
       <Modal opened={opened} onClose={close}>
         <form onSubmit={handleSubmit}>
@@ -72,22 +83,22 @@ function Login() {
               <TextInput
                 label="First Name"
                 placeholder="Enter your first name"
-                value={form.values.firstname}
+                value={values.firstname}
                 onChange={(event) =>
-                  form.setFieldValue("firstname", event.currentTarget.value)
+                  setFieldValue("firstname", event.currentTarget.value)
                 }
-                error={form.errors.firstname}
+                error={errors.firstname}
                 required
               />
 
               <TextInput
                 label="Last Name"
                 placeholder="Enter your last name"
-                value={form.values.lastname}
+                value={values.lastname}
                 onChange={(event) =>
-                  form.setFieldValue("lastname", event.currentTarget.value)
+                  setFieldValue("lastname", event.currentTarget.value)
                 }
-                error={form.errors.lastname}
+                error={errors.lastname}
                 required
               />
             </>
@@ -96,11 +107,11 @@ function Login() {
           <TextInput
             label="Email"
             placeholder="Enter your email"
-            value={form.values.email}
+            value={values.email}
             onChange={(event) =>
-              form.setFieldValue("email", event.currentTarget.value)
+              setFieldValue("email", event.currentTarget.value)
             }
-            error={form.errors.email}
+            error={errors.email}
             required
           />
 
@@ -108,19 +119,13 @@ function Login() {
             label="Password"
             type="password"
             placeholder="Enter your password"
-            value={form.values.password}
+            value={values.password}
             onChange={(event) =>
-              form.setFieldValue("password", event.currentTarget.value)
+              setFieldValue("password", event.currentTarget.value)
             }
-            error={form.errors.password}
+            error={errors.password}
             required
           />
-
-          {error && (
-            <Box mt={4} style={{ color: "red" }}>
-              {error}
-            </Box>
-          )}
 
           <Box
             style={{
@@ -130,7 +135,7 @@ function Login() {
             }}
             mt={12}
           >
-            <Button type="submit" disabled={!form.isValid()}>
+            <Button type="submit" disabled={!isValid()}>
               {formState === "login" ? "Login" : "Register"}
             </Button>
 

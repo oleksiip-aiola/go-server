@@ -1,12 +1,12 @@
 package main
 
 import (
-	"fmt"
 	"log"
+	"strings"
 
 	"github.com/alexey-petrov/go-server/server/auth"
 	"github.com/alexey-petrov/go-server/server/db"
-	jwtService "github.com/alexey-petrov/go-server/server/jwt"
+	"github.com/alexey-petrov/go-server/server/jwtService"
 	"github.com/alexey-petrov/go-server/server/structs"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -34,17 +34,16 @@ func establishDBConnection() {
 	defer db.CloseDB()
 }
 
-
 func main() {
 	// Connect to the database
 	establishDBConnection()
 
-	fmt.Println("Hello, Test")
 	app := fiber.New();
 
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: "http://localhost:5173",
-		AllowHeaders: "Origin, Content-Type, Accept",
+		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
+		AllowCredentials: true,
 	}))
 
 	todos := []structs.Todo{}
@@ -57,6 +56,27 @@ func initEndpoints(app *fiber.App, todos []structs.Todo) {
 	app.Get("api/healthcheck", helloHandler)
 
 	app.Get("api/todos", func (c *fiber.Ctx) error {
+		// Check if Authorization header exists
+		authHeader := c.Get("Authorization")
+		if authHeader == "" {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "Missing Authorization header",
+			})
+		}
+
+		// Extract JWT token from Authorization header
+		token := strings.TrimPrefix(authHeader, "Bearer ")
+
+		// Verify and parse the JWT token
+		_, err := jwtService.VerifyAndParseToken(token)
+
+		if err != nil {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "Invalid JWT token",
+			})
+		}
+
+		// Continue with the API logic
 		return c.JSON(todos)
 	})
 
@@ -166,8 +186,8 @@ func initEndpoints(app *fiber.App, todos []structs.Todo) {
 			return err
 		}
 
-		token, err := auth.Auth(*user)
-		fmt.Println(err)
+		token, refreshToken, err := auth.Auth(*user)
+
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"error":  "Failed to register",
@@ -175,13 +195,45 @@ func initEndpoints(app *fiber.App, todos []structs.Todo) {
 			})
 		}
 
+		jwtService.SetRefreshCookie(c, refreshToken)
+
 		return c.JSON(fiber.Map{
 			"token": token,
 		})
 	})
 
-	app.Post("api/refresh", refreshAccessTokenHandler)
+	app.Post("api/refresh", ManualResetAccessTokenHandler)
 	app.Post("api/login", handleLogin)
+	app.Post("api/refresh-token", handleRefreshToken)
+	app.Post("api/logout", handleLogout)
+}
+
+func handleLogout(c *fiber.Ctx) error {
+	_, _, err := jwtService.HandleInvalidateTokenByJti(c)
+
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to Invalidate JWT Refresh",
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"message": "Successfully logged out",
+	})
+}
+
+func handleRefreshToken (c *fiber.Ctx) error {
+	accessToken, err := jwtService.RefreshAccessToken(c)
+
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to generate JWT",
+		})
+	}
+
+	return c.JSON(fiber.Map{
+		"access_token": accessToken,
+	})
 }
 
 func handleLogin(c *fiber.Ctx) error {
@@ -191,22 +243,25 @@ func handleLogin(c *fiber.Ctx) error {
 		return err
 	}
 
-	token, err := auth.Login(user.Email, user.Password)
+	accessToken, refreshToken, err := auth.Login(user.Email, user.Password)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to generate JWT",
 		})
 	}
 
+	jwtService.SetRefreshCookie(c, refreshToken)
+
 	return c.JSON(fiber.Map{
-		"token": token,
+		"access_token": accessToken,
 	})
 }
 
 // Handler function for refreshing the access token using the refresh token
-func refreshAccessTokenHandler(c *fiber.Ctx) error {
-	accessToken, refreshToken, _ := jwtService.RefreshAccessToken(c)
+func ManualResetAccessTokenHandler(c *fiber.Ctx) error {
+	accessToken, refreshToken, _ := jwtService.ManualResetAccessToken(c)
 
+	jwtService.SetRefreshCookie(c, refreshToken)
 	// Return the new tokens as JSON response
 	return c.JSON(fiber.Map{
 		"access_token":  accessToken,

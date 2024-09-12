@@ -200,7 +200,6 @@ func GetUsers(db *sql.DB) {
 
 func StoreJTI(jti string, userID int, refreshTokenExp string) error {
 	ConnectDB()
-	fmt.Println(userID, jti, refreshTokenExp)
 	query := `INSERT INTO refresh_tokens (user_id, jti, expiry, is_revoked) VALUES ($1, $2, $3, $4)`
 	_, err := DB.Exec(query, userID, jti, refreshTokenExp, false)
 	if err != nil {
@@ -225,7 +224,7 @@ func RevokeJWTByUserId(userId int64) error{
 
 	defer CloseDB()
 
-fmt.Println("Revoked JWT for user ID:", userId)
+	fmt.Println("Revoked JWT for user ID:", userId)
 
 	return nil
 }

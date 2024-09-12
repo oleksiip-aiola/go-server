@@ -2,8 +2,8 @@ import { useForm } from "@mantine/form";
 import { Button, Group, Modal, Textarea, TextInput } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { KeyedMutator } from "swr";
-import { ENDPOINT } from "../utils/fetcher";
-import { Todo } from "../features/Todos/types";
+import { ENDPOINT } from "../../utils/fetcher";
+import { Todo } from "./types";
 
 export const AddTodo = ({ mutate }: { mutate: KeyedMutator<Todo[]> }) => {
   const [opened, { open, close }] = useDisclosure(false);
