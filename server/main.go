@@ -70,4 +70,3 @@ func handleLogFatal(app *fiber.App) {
 	log.Fatal(app.Listen(":4000"))
 
 }
-

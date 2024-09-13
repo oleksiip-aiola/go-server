@@ -10,8 +10,10 @@ import UserProviderWrapper from "./provider/userProvider.tsx";
 import {
   createBrowserRouter,
   createRoutesFromElements,
+  json,
   Route,
   RouterProvider,
+  useLoaderData,
 } from "react-router-dom";
 import ProtectedRoute from "./features/Auth/ProtectedRoute/ProtectedRoute.tsx";
 import { Todos } from "./features/Todos/index.tsx";
@@ -26,6 +28,16 @@ const router = createBrowserRouter(
         </Route>
       </Route>
       <Route path="/login" element={<App />} />
+      <Route
+        path="/search"
+        element={<App />}
+        loader={(data) => json(data)}
+        Component={() => {
+          let data: any = useLoaderData();
+          console.log(data);
+          return <div>sss</div>;
+        }}
+      />
     </>
   )
 );
