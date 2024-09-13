@@ -35,9 +35,8 @@ func main() {
 	app := fiber.New(fiber.Config{
 		IdleTimeout: 5,
 	});
-
 	app.Use(cors.New(cors.Config{
-		AllowOrigins: "http://localhost:5173",
+		AllowOrigins: "http://localhost:3000",
 		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
 		AllowCredentials: true,
 	}))

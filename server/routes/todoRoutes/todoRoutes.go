@@ -1,7 +1,7 @@
 package todoRoutes
 
 import (
-	"strings"
+	"os"
 
 	"github.com/alexey-petrov/go-server/server/jwtService"
 	"github.com/alexey-petrov/go-server/server/structs"
@@ -31,25 +31,30 @@ todos := []structs.Todo{}
 		}
 
 		// Extract JWT token from Authorization header
-		token := strings.TrimPrefix(authHeader, "Bearer ")
 
-		jti := c.Cookies("refresh_jti")
-		if jti == "" {
-			return fiber.NewError(fiber.StatusUnauthorized, "No refresh token JTI found")
-		}
-
-		_, verificationError := jwtService.VerifyToken(token)
+		accessTokenCookie := c.Cookies(os.Getenv("ACCESS_TOKEN_COOKIE_NAME"))
+		
+		_, verificationError := jwtService.VerifyToken(accessTokenCookie)
 
 		if verificationError != nil {
 			if verificationError.Error() == "access token expired" {
 				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 					"error": "Invalid JWT token",
 				})
+			} else {
+				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+					"error": "Invalid JWT token",
+				})
 			}
 		}
 
+		jti := c.Cookies(os.Getenv("JTI_COOKIE_NAME"))
+		if jti == "" {
+			return fiber.NewError(fiber.StatusUnauthorized, "No refresh token JTI found")
+		}
+
 		// Verify and parse the JWT token
-		_, err := jwtService.VerifyAndParseToken(token, jti)
+		_, err := jwtService.VerifyAndParseToken(accessTokenCookie, jti)
 
 		if err != nil {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{

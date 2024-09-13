@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/alexey-petrov/go-server/server/db"
@@ -24,12 +25,27 @@ func generateJTI() (string, error) {
 	return base64.URLEncoding.EncodeToString(b), nil
 }
 
+var ACCESS_TOKEN_EXPIRATION = 24 * time.Hour
+
 // Store JTI in HTTP-only cookie
 func SetRefreshCookie(c *fiber.Ctx, jti string) {
 	c.Cookie(&fiber.Cookie{
-		Name:     "refresh_jti",             // Name of the cookie to store JTI
+		Name:     os.Getenv("JTI_COOKIE_NAME"),             // Name of the cookie to store JTI
 		Value:    jti,                       // JTI as value
-		Expires:  time.Now().Add(7 * 24 * time.Hour), // Cookie expiry matches refresh token expiry
+		Expires:  time.Now().Add(7 * ACCESS_TOKEN_EXPIRATION), // Cookie expiry matches refresh token expiry
+		HTTPOnly: true,                      // HTTP-only, prevents JavaScript access
+		// @TODO: Set Secure to true/Strict in production
+		Secure:   false,                      // Send only over HTTPS
+		SameSite: "Lax",                  // Prevent CSRF attacks
+	})
+}
+
+// Store JTI in HTTP-only cookie
+func SetAccessTokenCookie(c *fiber.Ctx, token string) {
+	c.Cookie(&fiber.Cookie{
+		Name:     os.Getenv("ACCESS_TOKEN_COOKIE_NAME"),             // Name of the cookie to store JTI
+		Value:    token,                       // JTI as value
+		Expires:  time.Now().Add(ACCESS_TOKEN_EXPIRATION), // Cookie expiry matches refresh token expiry
 		HTTPOnly: true,                      // HTTP-only, prevents JavaScript access
 		// @TODO: Set Secure to true/Strict in production
 		Secure:   false,                      // Send only over HTTPS
@@ -39,7 +55,7 @@ func SetRefreshCookie(c *fiber.Ctx, jti string) {
 
 func generateJwtAccessToken(userId int64) (string, structs.User, error) {
 	// Set expiration time for the token
-	expirationTime := time.Now().Add(24 * time.Hour)
+	expirationTime := time.Now().Add(ACCESS_TOKEN_EXPIRATION)
 	userData, _ := db.GetUserByID(userId)
 
 	// Create the claims, which includes the user ID and standard JWT claims
@@ -160,7 +176,7 @@ func handleVerifyRefreshToken(c *fiber.Ctx) (*structs.Claims, string, error) {
 
 func handleRefreshTokenByJti(c *fiber.Ctx) (string, string, error) {
 	// Extract the JTI from the cookie
-	jti := c.Cookies("refresh_jti")
+	jti := c.Cookies(os.Getenv("JTI_COOKIE_NAME"))
 	if jti == "" {
 		return "", "" , fiber.NewError(fiber.StatusUnauthorized, "No refresh token JTI found")
 	}
@@ -187,7 +203,7 @@ func handleRefreshTokenByJti(c *fiber.Ctx) (string, string, error) {
 
 func HandleInvalidateTokenByJti(c *fiber.Ctx) (string, string, error) {
 	// Extract the JTI from the cookie
-	jti := c.Cookies("refresh_jti")
+	jti := c.Cookies(os.Getenv("JTI_COOKIE_NAME"))
 	if jti == "" {
 		return "", "" , fiber.NewError(fiber.StatusUnauthorized, "No refresh token JTI found")
 	}
@@ -205,7 +221,7 @@ func HandleInvalidateTokenByJti(c *fiber.Ctx) (string, string, error) {
 	}
 
 	c.Cookie(&fiber.Cookie{
-		Name:    "refresh_jti",
+		Name:    os.Getenv("JTI_COOKIE_NAME"),
 		Value:   "",
 		Expires: time.Now().Add(-1 * time.Hour), // Set the expiry time to a past date
 	})
@@ -246,7 +262,7 @@ func ManualResetAccessToken(c *fiber.Ctx) (string, string, error) {
 
 func RefreshAccessToken(c *fiber.Ctx) (string, error) {
 	// Extract the JTI from the cookie
-	jti := c.Cookies("refresh_jti")
+	jti := c.Cookies(os.Getenv("JTI_COOKIE_NAME"))
 	if jti == "" {
 		return "", c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "No refresh token JTI found"})
 	}
@@ -260,6 +276,7 @@ func RefreshAccessToken(c *fiber.Ctx) (string, error) {
 	}
 
 	SetRefreshCookie(c, refreshToken)
+	SetAccessTokenCookie(c, accessToken)
 
 	return accessToken, nil
 }

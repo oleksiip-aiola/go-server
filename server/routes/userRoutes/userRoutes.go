@@ -26,6 +26,7 @@ func UserRoutes(app *fiber.App) {
 		}
 
 		jwtService.SetRefreshCookie(c, refreshToken)
+		jwtService.SetAccessTokenCookie(c, token)
 
 		return c.JSON(fiber.Map{
 			"token": token,
@@ -82,6 +83,7 @@ func handleLogin(c *fiber.Ctx) error {
 	}
 
 	jwtService.SetRefreshCookie(c, refreshToken)
+	jwtService.SetAccessTokenCookie(c, accessToken)
 
 	return c.JSON(fiber.Map{
 		"access_token": accessToken,
@@ -93,6 +95,8 @@ func ManualResetAccessTokenHandler(c *fiber.Ctx) error {
 	accessToken, refreshToken, _ := jwtService.ManualResetAccessToken(c)
 
 	jwtService.SetRefreshCookie(c, refreshToken)
+	jwtService.SetAccessTokenCookie(c, accessToken)
+
 	// Return the new tokens as JSON response
 	return c.JSON(fiber.Map{
 		"access_token":  accessToken,
