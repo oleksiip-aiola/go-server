@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"github.com/alexey-petrov/go-server/server/routes/searchRoutes"
 	"github.com/alexey-petrov/go-server/server/routes/todoRoutes"
 	"github.com/alexey-petrov/go-server/server/routes/userRoutes"
 	"github.com/gofiber/fiber/v2"
@@ -13,6 +14,7 @@ func SetRoutes(app *fiber.App) {
 
 	todoRoutes.TodoRoutes(app)
 	userRoutes.UserRoutes(app)
+	searchRoutes.SearchRoutes(app)
 }
 
 
