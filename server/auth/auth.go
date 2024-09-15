@@ -3,7 +3,7 @@ package auth
 import (
 	"fmt"
 
-	"github.com/alexey-petrov/go-server/server/db"
+	"github.com/alexey-petrov/go-server/server/db" // Add this line
 	"github.com/alexey-petrov/go-server/server/jwtService"
 	"github.com/alexey-petrov/go-server/server/structs"
 )

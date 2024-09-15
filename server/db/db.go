@@ -1,4 +1,3 @@
-// db/db.go
 package db
 
 import (
@@ -16,8 +15,10 @@ var DB *sql.DB // Global DB variable to be used across the application
 
 // ConnectDB initializes the connection to the PostgreSQL database
 func ConnectDB() *sql.DB {
+	var err error;
+
 	// Load .env file
-    err := godotenv.Load()
+    err = godotenv.Load()
     if err != nil {
         log.Fatal("Error loading .env file")
     }
@@ -67,6 +68,9 @@ func CreateTable(db *sql.DB) {
 		first_name TEXT NOT NULL,
 		last_name TEXT NOT NULL,
 		password TEXT NOT NULL,
+		is_admin BOOLEAN NOT NULL,
+    	updated_at TIMESTAMPTZ NOT NULL,
+    	created_at TIMESTAMPTZ NOT NULL,
 		email TEXT NOT NULL UNIQUE
 	)`
 
@@ -81,8 +85,8 @@ func CreateTable(db *sql.DB) {
 func CreateJTITable(db *sql.DB) {
 	query := `
 	CREATE TABLE IF NOT EXISTS refresh_tokens (
-    	token_id SERIAL PRIMARY KEY,
-    	user_id INT NOT NULL,
+    	id SERIAL PRIMARY KEY,
+    	user_id SERIAL NOT NULL,
     	jti TEXT NOT NULL UNIQUE,
     	expiry TIMESTAMPTZ NOT NULL,
     	is_revoked BOOLEAN DEFAULT FALSE

@@ -1,8 +1,7 @@
-package jwtService
+package gormJwtService
 
 import (
 	"crypto/rand"
-	"database/sql"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -10,9 +9,11 @@ import (
 	"time"
 
 	"github.com/alexey-petrov/go-server/server/db"
+	"github.com/alexey-petrov/go-server/server/gormdb"
 	"github.com/alexey-petrov/go-server/server/structs"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
+	"gorm.io/gorm"
 )
 
 // Generate random JTI (JWT ID)
@@ -26,18 +27,19 @@ func generateJTI() (string, error) {
 }
 
 var ACCESS_TOKEN_EXPIRATION = 24 * time.Hour
+var REFRESH_TOKEN_EXPIRATION = 7 * ACCESS_TOKEN_EXPIRATION
 
 // Store JTI in HTTP-only cookie
 func SetRefreshCookie(c *fiber.Ctx, jti string) {
+	fmt.Println("set jti cookie", jti)
 	c.Cookie(&fiber.Cookie{
 		Name:     os.Getenv("JTI_COOKIE_NAME"),             // Name of the cookie to store JTI
 		Value:    jti,                       // JTI as value
-		Expires:  time.Now().Add(7 * ACCESS_TOKEN_EXPIRATION), // Cookie expiry matches refresh token expiry
+		Expires:  time.Now().Add(REFRESH_TOKEN_EXPIRATION), // Cookie expiry matches refresh token expiry
 		HTTPOnly: true,                      // HTTP-only, prevents JavaScript access
 		// @TODO: Set Secure to true/Strict in production
 		Secure:   false,                      // Send only over HTTPS
 		SameSite: "Lax",                  // Prevent CSRF attacks
-		Path:     "/",
 	})
 }
 
@@ -51,23 +53,36 @@ func SetAccessTokenCookie(c *fiber.Ctx, token string) {
 		// @TODO: Set Secure to true/Strict in production
 		Secure:   false,                      // Send only over HTTPS
 		SameSite: "Lax",                  // Prevent CSRF attacks
-		Path:     "/",
 	})
 }
 
-func generateJwtAccessToken(userId int64) (string, structs.User, error) {
+type AuthClaims struct {
+	ID        string   `json:"id"`
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
+	Email     string `json:"email"`
+	Admin    bool   `json:"role"`
+	jwt.RegisteredClaims
+}
+type RefreshJWTClaims struct {
+	ID        string   `json:"id"`
+	jwt.RegisteredClaims
+}
+
+func generateJwtAccessToken(userId string) (string, error) {
 	// Set expiration time for the token
 	expirationTime := time.Now().Add(ACCESS_TOKEN_EXPIRATION)
-	userData, _ := db.GetUserByID(userId)
+	userData, _ := gormdb.GetUserById(userId)
 
 	// Create the claims, which includes the user ID and standard JWT claims
-	claims := &structs.Claims{
-		UserID: int64(userData.ID),
+	claims := &AuthClaims{
+		ID: userData.UserId,
 		FirstName: userData.FirstName,
 		LastName: userData.LastName,
 		Email: userData.Email,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expirationTime),
+			Issuer:   "go-server",
 		},
 	}
 
@@ -77,41 +92,61 @@ func generateJwtAccessToken(userId int64) (string, structs.User, error) {
 	// Sign the token with the secret key
 	accessToken, err := token.SignedString(structs.JwtKey)
 	if err != nil {
-		return "", structs.User{}, err
+		return "", err
 	}
 	fmt.Println("Generated JWT:", accessToken)
-	return accessToken, userData, err
+	return accessToken, err
 }
+
+func generateJwtRefreshToken(userId string) (string, time.Time, error) {
+	// Set expiration time for the token
+	expirationTime := time.Now().Add(REFRESH_TOKEN_EXPIRATION)
+
+	jti, err := generateJTI()      
+	                      
+	if err != nil {
+		return "", time.Time{}, err
+	}
+
+	refreshClaims := &RefreshJWTClaims{
+		ID: userId,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(expirationTime),
+			Issuer:   "go-server",
+			ID:        jti, // Set JTI in the refresh token
+		},
+	}
+
+	// Create the token with the specified signing method
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
+
+	// Sign the token with the secret key
+	refreshToken, err := token.SignedString(structs.JwtKey)
+	if err != nil {
+		return "", time.Time{}, err
+	}
+	fmt.Println("Generated REFRESH TOKEN:", refreshToken)
+	return refreshToken, expirationTime, err
+}
+
 // Generate JWT with user ID
-func GenerateJWT(userId int64) (string, string, error) {
+func GenerateJWT(userId string) (string, string, error) {
 	
-	accessToken, userData, err := generateJwtAccessToken(userId)
+	accessToken, err := generateJwtAccessToken(userId)
 	if err != nil {
 		return "", "", err
 	}
 	// Set expiration time for Refresh Token (long-lived)
-	refreshTokenExp := time.Now().Add(7 * 24 * time.Hour) // 7 days
-	jti, err := generateJTI()                            // Generate JTI
-	if err != nil {
-		return "", "", err
-	}
-	refreshClaims := &structs.Claims{
-		UserID: int64(userData.ID),
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(refreshTokenExp),
-			ID:        jti, // Set JTI in the refresh token
-		},
-	}
-	refreshToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims).SignedString(structs.JwtRefreshKey)
+	refreshToken, expirationTime, err := generateJwtRefreshToken(userId)
+
 	if err != nil {
 		return "", "", err
 	}
 
-	fmt.Println("Generated JWT:", accessToken)
-	fmt.Println("Generated REFRESH:", refreshToken)
+	userData, _ := gormdb.GetUserById(userId)
 
 	// Store the JTI in the database
-	err = db.StoreJTI(refreshToken, userData.ID, refreshTokenExp.Format(time.RFC3339))
+	err = gormdb.StoreJTI(refreshToken, userData.UserId, expirationTime.Format(time.RFC3339))
 	if err != nil {
 		return "", "", err
 	}
@@ -120,10 +155,8 @@ func GenerateJWT(userId int64) (string, string, error) {
 }
 
 // Verify the refresh token and JTI
-func VerifyRefreshToken(tokenString string) (*structs.Claims, string, error) {
-	database := db.ConnectDB()
-
-	token, err := jwt.ParseWithClaims(tokenString, &structs.Claims{}, func(token *jwt.Token) (interface{}, error) {
+func VerifyRefreshToken(tokenString string) (*AuthClaims, string, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &AuthClaims{}, func(token *jwt.Token) (interface{}, error) {
 		return structs.JwtKey, nil
 	})
 	
@@ -131,35 +164,25 @@ func VerifyRefreshToken(tokenString string) (*structs.Claims, string, error) {
 		return nil, "", fmt.Errorf("invalid token: %v", err)
 	}
 	// Check if the JTI exists in the database and is not revoked
-	var isRevoked bool
 	var jti string
 	
-	claims, _ := token.Claims.(*structs.Claims)
+	claims, _ := token.Claims.(*AuthClaims)
 
-	err = database.QueryRow("SELECT is_revoked, jti FROM refresh_tokens WHERE user_id = $1 AND expiry > NOW() ORDER BY TOKEN_ID DESC LIMIT 1", claims.UserID).Scan(&isRevoked, &jti)
+	jti, err = gormdb.CheckIfRefreshTokenIsRevokedByUserId(claims.ID)
 
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, "", fmt.Errorf("refresh token is expired or invalid")
-		}
 		return nil, "", err
 	}
-
-	if isRevoked {
-		return nil, "", fmt.Errorf("refresh token is revoked")
-	}
-
-	defer db.CloseDB()
 
 	return claims, jti, nil
 }
 
-func handleVerifyRefreshToken(c *fiber.Ctx) (*structs.Claims, string, error) {
+func handleVerifyRefreshToken(c *fiber.Ctx) (*AuthClaims, string, error) {
 	// Extract the refresh token from the Authorization header
 	authHeader := c.Get("Authorization")
 
 	if authHeader == "" {
-		return &structs.Claims{}, "" , fiber.NewError(fiber.StatusUnauthorized, "Authorization header missing")
+		return &AuthClaims{}, "" , fiber.NewError(fiber.StatusUnauthorized, "Authorization header missing")
 	}
 
 	// Extract the token from the Bearer prefix
@@ -168,7 +191,7 @@ func handleVerifyRefreshToken(c *fiber.Ctx) (*structs.Claims, string, error) {
 	// Verify the refresh token
 	claims, jti, err := VerifyRefreshToken(tokenString)
 	if err != nil {
-		return &structs.Claims{}, "" , fiber.NewError(fiber.StatusUnauthorized, err.Error())
+		return &AuthClaims{}, "" , fiber.NewError(fiber.StatusUnauthorized, err.Error())
 	}
 
 	defer db.CloseDB()
@@ -182,23 +205,25 @@ func handleRefreshTokenByJti(c *fiber.Ctx) (string, string, error) {
 	if jti == "" {
 		return "", "" , fiber.NewError(fiber.StatusUnauthorized, "No refresh token JTI found")
 	}
-
-	var userId int64
-	database := db.ConnectDB()
+	
 	// Validate the JTI against stored refresh tokens in your database (mock validation here)
 	// In production, check if the JTI is valid and not revoked.
-	err := database.QueryRow("SELECT user_id FROM refresh_tokens WHERE jti = $1 AND expiry > NOW() ORDER BY TOKEN_ID DESC LIMIT 1", jti).Scan(&userId)
-
-	if err != nil {
-		if err == sql.ErrNoRows {
+	var refreshJwtToken struct {
+		UserID string
+	}
+fmt.Println("jti", jti)
+	result := gormdb.DBConn.Model(&gormdb.RefreshToken{}).Where("jti = ? AND expiry > NOW() AND is_revoked=false", jti).Limit(1).Scan(&refreshJwtToken)
+	if result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			return "", "", fmt.Errorf("refresh token is expired or invalid")
 		}
-		return "", "", err
+		return "", "", result.Error
 	}
 
-	accessToken, refreshToken, err := GenerateJWT(userId)
+	fmt.Println(refreshJwtToken)
+	userId := refreshJwtToken.UserID
 
-	defer db.CloseDB()
+	accessToken, refreshToken, err := GenerateJWT(userId)
 
 	return accessToken, refreshToken, err
 }
@@ -210,13 +235,12 @@ func HandleInvalidateTokenByJti(c *fiber.Ctx) (string, string, error) {
 		return "", "" , fiber.NewError(fiber.StatusUnauthorized, "No refresh token JTI found")
 	}
 
-	database := db.ConnectDB()
+	
 	// Validate the JTI against stored refresh tokens in your database (mock validation here)
 	// In production, check if the JTI is valid and not revoked.
-	_, err := database.Exec("UPDATE refresh_tokens SET is_revoked = true WHERE jti = $1", jti)
-
+	err := gormdb.DBConn.Model(&gormdb.RefreshToken{}).Where("jti = ?", jti).Update("is_revoked", true).Error
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return "", "", fmt.Errorf("refresh token is expired or invalid")
 		}
 		return "", "", err
@@ -241,23 +265,21 @@ func ManualResetAccessToken(c *fiber.Ctx) (string, string, error) {
 		return "", "" , c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "Invalid refresh token"})
 	}
 
-	database := db.ConnectDB()
+	
 
 	// Generate new access token and refresh token
-	accessToken, refreshToken, err := GenerateJWT(claims.UserID)
+	accessToken, refreshToken, err := GenerateJWT(claims.ID)
 
 	if err != nil {
 		return "", "" , fiber.NewError(fiber.StatusInternalServerError, "Error generating tokens")
 	}
 
 	// Revoke the old refresh token by marking it as revoked in the database
-	_, err = database.Exec("UPDATE refresh_tokens SET is_revoked = true WHERE jti = $1", jti)
+	err = gormdb.DBConn.Model(&gormdb.RefreshToken{}).Where("jti = ?", jti).Update("is_revoked", true).Error
 
 	if err != nil {
-		return "", "" , fiber.NewError(fiber.StatusInternalServerError, "Error revoking old refresh token")
+		return "", "", fiber.NewError(fiber.StatusInternalServerError, "Error revoking old refresh token")
 	}
-
-	defer db.CloseDB()
 
 	return accessToken, refreshToken, nil
 }
@@ -340,16 +362,13 @@ func VerifyAndParseToken(token string, jti string) (map[string]interface{}, erro
 	}
 
 	// Get the user ID from the claims
-	userId, ok := claims["userId"].(float64)
-	
-	userIdInt := int64(userId)
-
+	userId, ok := claims["ID"].(string)
 	
 	if !ok {
 		return nil, errors.New("invalid user ID in JWT token")
 	}
 
-	_, err = db.GetUserByID(userIdInt)
+	_, err = gormdb.GetUserById(userId)
 
 	if err != nil {  
 		return nil, err
@@ -360,7 +379,7 @@ func VerifyAndParseToken(token string, jti string) (map[string]interface{}, erro
 }
 
 func refreshAccessToken(refreshTokenString string) (string, error) {
-	claims := &structs.Claims{}
+	claims := &AuthClaims{}
 
 	// Parse and validate the refresh token
 	token, err := jwt.ParseWithClaims(refreshTokenString, claims, func(token *jwt.Token) (interface{}, error) {
@@ -374,9 +393,9 @@ func refreshAccessToken(refreshTokenString string) (string, error) {
 	if !token.Valid {
 		return "", fmt.Errorf("invalid refresh token")
 	}
-
+	fmt.Println("claims", claims)
 	// Generate a new access token
-	newAccessToken, _, err := generateJwtAccessToken(claims.UserID)
+	newAccessToken, err := generateJwtAccessToken(claims.ID)
 	if err != nil {
 		return "", err
 	}

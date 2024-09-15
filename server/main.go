@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	"github.com/alexey-petrov/go-server/server/db"
+	"github.com/alexey-petrov/go-server/server/gormdb"
 	"github.com/alexey-petrov/go-server/server/routes"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/compress"
@@ -28,13 +29,27 @@ func establishDBConnection() {
 	defer db.CloseDB()
 }
 
+func establishGormDBConnection() {
+	fmt.Println("Establishing Gorm DB connection")
+	// Initialize DB connection
+	gormdb.InitDB()
+
+	database := db.ConnectDB()
+
+	defer database.Close()
+	db.CreateTable(database)
+	db.CreateJTITable(database)
+}
+
 func main() {
 	// Connect to the database
-	establishDBConnection()
-
+	// establishDBConnection()
+	establishGormDBConnection()
+	
 	app := fiber.New(fiber.Config{
 		IdleTimeout: 5,
 	});
+
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: "http://localhost:3000",
 		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
@@ -42,7 +57,6 @@ func main() {
 	}))
 
 	app.Use(compress.New())
-
 
 	routes.SetRoutes(app)
 	handleLogFatal(app)
