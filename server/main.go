@@ -39,6 +39,7 @@ func establishGormDBConnection() {
 	defer database.Close()
 	db.CreateTable(database)
 	db.CreateJTITable(database)
+	db.CreateSearchSettingsTable(database)
 }
 
 func main() {

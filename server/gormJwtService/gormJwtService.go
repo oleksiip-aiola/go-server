@@ -8,9 +8,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/alexey-petrov/go-server/server/config"
 	"github.com/alexey-petrov/go-server/server/db"
 	"github.com/alexey-petrov/go-server/server/gormdb"
-	"github.com/alexey-petrov/go-server/server/structs"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
 	"gorm.io/gorm"
@@ -90,7 +90,7 @@ func generateJwtAccessToken(userId string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	// Sign the token with the secret key
-	accessToken, err := token.SignedString(structs.JwtKey)
+	accessToken, err := token.SignedString(config.JwtKey)
 	if err != nil {
 		return "", err
 	}
@@ -121,7 +121,7 @@ func generateJwtRefreshToken(userId string) (string, time.Time, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
 
 	// Sign the token with the secret key
-	refreshToken, err := token.SignedString(structs.JwtKey)
+	refreshToken, err := token.SignedString(config.JwtKey)
 	if err != nil {
 		return "", time.Time{}, err
 	}
@@ -157,7 +157,7 @@ func GenerateJWT(userId string) (string, string, error) {
 // Verify the refresh token and JTI
 func VerifyRefreshToken(tokenString string) (*AuthClaims, string, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &AuthClaims{}, func(token *jwt.Token) (interface{}, error) {
-		return structs.JwtKey, nil
+		return config.JwtKey, nil
 	})
 	
 	if err != nil || !token.Valid {
@@ -314,7 +314,7 @@ func VerifyToken(token string) (*jwt.Token, error) {
 			return nil, fmt.Errorf("invalid signing method: %v", token.Header["alg"])
 		}
 		// Return the secret key used for signing
-		return []byte(structs.JwtKey), nil
+		return []byte(config.JwtKey), nil
 	})
 
 	if err != nil {
@@ -383,7 +383,7 @@ func refreshAccessToken(refreshTokenString string) (string, error) {
 
 	// Parse and validate the refresh token
 	token, err := jwt.ParseWithClaims(refreshTokenString, claims, func(token *jwt.Token) (interface{}, error) {
-		return structs.JwtRefreshKey, nil
+		return config.JwtRefreshKey, nil
 	})
 
 	if err != nil {

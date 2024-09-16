@@ -100,6 +100,24 @@ func CreateJTITable(db *sql.DB) {
 	fmt.Println("Table created successfully!")
 }
 
+func CreateSearchSettingsTable(db *sql.DB) {
+	query := `
+	CREATE TABLE IF NOT EXISTS search_settings (
+    	id SERIAL PRIMARY KEY,
+    	amount INTEGER NOT NULL,
+		updated_at TIMESTAMPTZ NOT NULL,
+    	search_on BOOLEAN DEFAULT FALSE,
+    	add_new BOOLEAN DEFAULT FALSE
+	);`
+
+	_, err := db.Exec(query)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("Table created successfully!")
+}
+
 func InsertUser(user structs.User) (structs.User, error) {
 	ConnectDB()
 

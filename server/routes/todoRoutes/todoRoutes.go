@@ -1,7 +1,7 @@
 package todoRoutes
 
 import (
-	"github.com/alexey-petrov/go-server/server/jwtService"
+	"github.com/alexey-petrov/go-server/server/gormJwtService"
 	"github.com/alexey-petrov/go-server/server/structs"
 	"github.com/gofiber/fiber/v2"
 )
@@ -32,7 +32,7 @@ todos := []structs.Todo{}
 		accessTokenCookie := authHeader[len("Bearer "):]
 		// accessTokenCookie := c.Cookies(os.Getenv("ACCESS_TOKEN_COOKIE_NAME"))
 		
-		_, verificationError := jwtService.VerifyToken(accessTokenCookie)
+		_, verificationError := gormJwtService.VerifyToken(accessTokenCookie)
 
 		if verificationError != nil {
 			if verificationError.Error() == "access token expired" {
@@ -45,20 +45,6 @@ todos := []structs.Todo{}
 				})
 			}
 		}
-
-		// jti := c.Cookies(os.Getenv("JTI_COOKIE_NAME"))
-		// if jti == "" {
-		// 	return fiber.NewError(fiber.StatusUnauthorized, "No refresh token JTI found")
-		// }
-
-		// // Verify and parse the JWT token
-		// _, err := jwtService.VerifyAndParseToken(accessTokenCookie, jti)
-
-		// if err != nil {
-		// 	return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-		// 		"error": "Invalid JWT token",
-		// 	})
-		// }
 
 		// Continue with the API logic
 		return c.JSON(todos)
@@ -74,7 +60,6 @@ todos := []structs.Todo{}
 		todo.ID = len(todos) + 1
 
 		todos = append(todos, *todo)
-
 
 		return c.JSON(todos)
 	})

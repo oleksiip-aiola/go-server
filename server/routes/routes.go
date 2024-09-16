@@ -18,8 +18,6 @@ func SetRoutes(app *fiber.App) {
 }
 
 
-
-
 func initEndpoints(app *fiber.App) {
 	app.Get("api/healthcheck", helloHandler)
 }
