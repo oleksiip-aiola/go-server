@@ -13,7 +13,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/compress"
 	"github.com/gofiber/fiber/v2/middleware/cors"
-	"github.com/joho/godotenv"
 )
 
 func establishdbConnection() {
@@ -29,7 +28,6 @@ func establishdbConnection() {
 func main() {
 	// Connect to the database
 	establishdbConnection()
-	godotenv.Load()
 	app := fiber.New(fiber.Config{
 		IdleTimeout: 5,
 	})
