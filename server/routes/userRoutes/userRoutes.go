@@ -1,8 +1,8 @@
 package userRoutes
 
 import (
-	"github.com/alexey-petrov/go-server/server/gormAuth"
-	"github.com/alexey-petrov/go-server/server/gormJwtService"
+	"github.com/alexey-petrov/go-server/server/auth"
+	"github.com/alexey-petrov/go-server/server/jwtService"
 	"github.com/alexey-petrov/go-server/server/structs"
 	"github.com/gofiber/fiber/v2"
 )
@@ -10,13 +10,13 @@ import (
 func UserRoutes(app *fiber.App) {
 	app.Post("api/register", func(c *fiber.Ctx) error {
 
-		user := &gormAuth.User{}
+		user := &auth.User{}
 
 		if err := c.BodyParser(user); err != nil {
 			return err
 		}
 
-		token, refreshToken, err := gormAuth.Auth(*user)
+		token, refreshToken, err := auth.Auth(*user)
 
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -25,8 +25,8 @@ func UserRoutes(app *fiber.App) {
 			})
 		}
 
-		gormJwtService.SetRefreshCookie(c, refreshToken)
-		gormJwtService.SetAccessTokenCookie(c, token)
+		jwtService.SetRefreshCookie(c, refreshToken)
+		jwtService.SetAccessTokenCookie(c, token)
 
 		return c.JSON(fiber.Map{
 			"access_token": token,
@@ -39,9 +39,8 @@ func UserRoutes(app *fiber.App) {
 	app.Post("api/logout", handleLogout)
 }
 
-
 func handleLogout(c *fiber.Ctx) error {
-	_, _, err := gormJwtService.HandleInvalidateTokenByJti(c)
+	_, _, err := jwtService.HandleInvalidateTokenByJti(c)
 
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -54,8 +53,8 @@ func handleLogout(c *fiber.Ctx) error {
 	})
 }
 
-func handleRefreshToken (c *fiber.Ctx) error {
-	accessToken, err := gormJwtService.RefreshAccessToken(c)
+func handleRefreshToken(c *fiber.Ctx) error {
+	accessToken, err := jwtService.RefreshAccessToken(c)
 
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -75,15 +74,15 @@ func handleLogin(c *fiber.Ctx) error {
 		return err
 	}
 
-	accessToken, refreshToken, err := gormAuth.Login(user.Email, user.Password)
+	accessToken, refreshToken, err := auth.Login(user.Email, user.Password)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to generate JWT",
 		})
 	}
 
-	gormJwtService.SetRefreshCookie(c, refreshToken)
-	gormJwtService.SetAccessTokenCookie(c, accessToken)
+	jwtService.SetRefreshCookie(c, refreshToken)
+	jwtService.SetAccessTokenCookie(c, accessToken)
 
 	return c.JSON(fiber.Map{
 		"access_token": accessToken,
@@ -92,10 +91,10 @@ func handleLogin(c *fiber.Ctx) error {
 
 // Handler function for refreshing the access token using the refresh token
 func ManualResetAccessTokenHandler(c *fiber.Ctx) error {
-	accessToken, refreshToken, _ := gormJwtService.ManualResetAccessToken(c)
+	accessToken, refreshToken, _ := jwtService.ManualResetAccessToken(c)
 
-	gormJwtService.SetRefreshCookie(c, refreshToken)
-	gormJwtService.SetAccessTokenCookie(c, accessToken)
+	jwtService.SetRefreshCookie(c, refreshToken)
+	jwtService.SetAccessTokenCookie(c, accessToken)
 
 	// Return the new tokens as JSON response
 	return c.JSON(fiber.Map{

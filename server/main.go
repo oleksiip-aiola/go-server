@@ -8,58 +8,41 @@ import (
 	"syscall"
 
 	"github.com/alexey-petrov/go-server/server/db"
-	"github.com/alexey-petrov/go-server/server/gormdb"
 	"github.com/alexey-petrov/go-server/server/routes"
+	"github.com/alexey-petrov/go-server/server/utils"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/compress"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 )
 
-
-func establishDBConnection() {
-	// Initialize DB connection
-	database := db.ConnectDB()
-
-	defer database.Close()
-
-	db.CreateTable(database)
-	db.CreateJTITable(database)
-
-	// Close the database connection when done
-	defer db.CloseDB()
-}
-
-func establishGormDBConnection() {
+func establishdbConnection() {
 	fmt.Println("Establishing Gorm DB connection")
 	// Initialize DB connection
-	gormdb.InitDB()
+	db.InitDB()
 
-	database := db.ConnectDB()
-
-	defer database.Close()
-	db.CreateTable(database)
-	db.CreateJTITable(database)
-	db.CreateSearchSettingsTable(database)
+	db.CreateTable()
+	db.CreateJTITable()
+	db.CreateSearchSettingsTable()
 }
 
 func main() {
 	// Connect to the database
-	// establishDBConnection()
-	establishGormDBConnection()
-	
+	establishdbConnection()
+
 	app := fiber.New(fiber.Config{
 		IdleTimeout: 5,
-	});
+	})
 
 	app.Use(cors.New(cors.Config{
-		AllowOrigins: "http://localhost:3000",
-		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
+		AllowOrigins:     "http://localhost:3000",
+		AllowHeaders:     "Origin, Content-Type, Accept, Authorization",
 		AllowCredentials: true,
 	}))
 
 	app.Use(compress.New())
 
 	routes.SetRoutes(app)
+	utils.StartCronJobs()
 	handleLogFatal(app)
 
 	go func() {
@@ -77,8 +60,6 @@ func main() {
 	app.Shutdown()
 	fmt.Println("Shutting down the server")
 }
-
-
 
 func handleLogFatal(app *fiber.App) {
 	log.Fatal(app.Listen(":4000"))

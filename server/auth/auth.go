@@ -1,35 +1,35 @@
-package gormAuth
+package auth
 
 import (
 	"fmt"
 
 	// Add this line
-	"github.com/alexey-petrov/go-server/server/gormJwtService"
-	"github.com/alexey-petrov/go-server/server/gormdb"
+	"github.com/alexey-petrov/go-server/server/db"
+	"github.com/alexey-petrov/go-server/server/jwtService"
 )
 
 type User struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email     string `json:"email"`
+	Password  string `json:"password"`
 	FirstName string `json:"firstName"`
-	LastName string `json:"lastName"`
+	LastName  string `json:"lastName"`
 }
 
 func Auth(user User) (string, string, error) {
 	var err error
 
-	gormUser := gormdb.User{}
+	gormUser := db.User{}
 	id, err := gormUser.CreateAdmin(user.Email, user.Password, user.FirstName, user.LastName)
 
 	if err != nil {
 		return "", "", err
 	}
-fmt.Println(id)
-	token, refreshToken, err := gormJwtService.GenerateJWT(id)
+
+	token, refreshToken, err := jwtService.GenerateJWT(id)
 
 	if err != nil {
 		fmt.Println("Error generating JWT:", err)
-		return "", "",err
+		return "", "", err
 	}
 
 	return token, refreshToken, err
@@ -37,12 +37,12 @@ fmt.Println(id)
 
 func Login(email string, password string) (string, string, error) {
 	// Example: generate a JWT for user with ID 123
-	user := gormdb.User{}
+	user := db.User{}
 	userData, _ := user.LoginAsAdmin(email, password)
-	
-	gormdb.RevokeJWTByUserId(userData.UserId)
 
-	token, refreshToken, err := gormJwtService.GenerateJWT(userData.UserId)
+	jwtService.RevokeJWTByUserId(userData.UserId)
+
+	token, refreshToken, err := jwtService.GenerateJWT(userData.UserId)
 	if err != nil {
 		fmt.Println("Error generating JWT:", err)
 		return "", "", err

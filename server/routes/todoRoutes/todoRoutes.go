@@ -1,25 +1,24 @@
 package todoRoutes
 
 import (
-	"github.com/alexey-petrov/go-server/server/gormJwtService"
+	"github.com/alexey-petrov/go-server/server/jwtService"
 	"github.com/alexey-petrov/go-server/server/structs"
 	"github.com/gofiber/fiber/v2"
 )
 
 func findTodoIndexByID(id int, todos []structs.Todo) int {
-    for i, todo := range todos {
-        if todo.ID == id {
-            return i
-        }
-    }
-    return -1
+	for i, todo := range todos {
+		if todo.ID == id {
+			return i
+		}
+	}
+	return -1
 }
 
+func TodoRoutes(app *fiber.App) {
+	todos := []structs.Todo{}
 
-func TodoRoutes(app *fiber.App, ) {
-todos := []structs.Todo{}
-
-	app.Get("api/todos", func (c *fiber.Ctx) error {
+	app.Get("api/todos", func(c *fiber.Ctx) error {
 		// Check if Authorization header exists
 		authHeader := c.Get("Authorization")
 		if authHeader == "" {
@@ -31,8 +30,8 @@ todos := []structs.Todo{}
 		// Extract JWT token from Authorization header
 		accessTokenCookie := authHeader[len("Bearer "):]
 		// accessTokenCookie := c.Cookies(os.Getenv("ACCESS_TOKEN_COOKIE_NAME"))
-		
-		_, verificationError := gormJwtService.VerifyToken(accessTokenCookie)
+
+		_, verificationError := jwtService.VerifyToken(accessTokenCookie)
 
 		if verificationError != nil {
 			if verificationError.Error() == "access token expired" {
@@ -79,7 +78,6 @@ todos := []structs.Todo{}
 			})
 		}
 
-		
 		todo := &structs.Todo{ID: id}
 
 		if err := c.BodyParser(todo); err != nil {
@@ -96,12 +94,12 @@ todos := []structs.Todo{}
 			}
 
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"error": "structs.Todo is missing fields",
+				"error":  "structs.Todo is missing fields",
 				"fields": missingFields,
 			})
 		}
 
-		todos[todoIndex] = *todo;
+		todos[todoIndex] = *todo
 
 		return c.JSON(todos)
 	})
@@ -114,14 +112,14 @@ todos := []structs.Todo{}
 		}
 
 		// Find the todo by ID
-        todoIndex := findTodoIndexByID(id, todos)
+		todoIndex := findTodoIndexByID(id, todos)
 
 		if todoIndex == -1 {
-            return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-                "error": "structs.Todo not found",
-            })
-        }
-		
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"error": "structs.Todo not found",
+			})
+		}
+
 		todos[todoIndex].Done = !todos[todoIndex].Done
 
 		return c.JSON(todos)
@@ -141,10 +139,10 @@ todos := []structs.Todo{}
 				"error": "structs.Todo not found",
 			})
 		}
-		
-		todos = append(todos[:todoIndex], todos[todoIndex + 1:]...)
+
+		todos = append(todos[:todoIndex], todos[todoIndex+1:]...)
 
 		return c.JSON(todos)
 	})
-	
+
 }

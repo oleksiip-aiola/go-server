@@ -1,12 +1,12 @@
-package gormdb
+package db
 
 import "time"
 
 type SearchSettings struct {
-	ID uint `gorm:"primaryKey" json:"id"`
-	SearchOn bool `json:"searchOn"`
-	AddNew bool `json:"addNew"`
-	Amount int32 `json:"amount"`
+	ID        uint      `gorm:"primaryKey" json:"id"`
+	SearchOn  bool      `json:"searchOn"`
+	AddNew    bool      `json:"addNew"`
+	Amount    int32     `json:"amount"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }
 
@@ -14,7 +14,7 @@ func (s *SearchSettings) UpdateSearchSettings(searchOn bool, addNew bool, amount
 	s.SearchOn = searchOn
 	s.AddNew = addNew
 	s.Amount = amount
-	s.ID = 1;
+	s.ID = 1
 
 	if err := DBConn.Save(&s).Error; err != nil {
 		return err

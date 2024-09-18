@@ -1,4 +1,4 @@
-package gormdb
+package db
 
 import (
 	"errors"
@@ -11,35 +11,35 @@ import (
 )
 
 type User struct {
-	UserId string `gorm:"type:uuid;default:uuid_generate_v4()" json:"userId"`
-	Email string `gorm:"unique" json:"email"`
-	FirstName string `json:"firstName"`
-	LastName string `json:"lastName"`
-	Password string `json:"-"`
-	IsAdmin bool `gorm:"default:false" json:"isAdmin"`
+	UserId    string     `gorm:"type:uuid;default:uuid_generate_v4()" json:"userId"`
+	Email     string     `gorm:"unique" json:"email"`
+	FirstName string     `json:"firstName"`
+	LastName  string     `json:"lastName"`
+	Password  string     `json:"-"`
+	IsAdmin   bool       `gorm:"default:false" json:"isAdmin"`
 	CreatedAt *time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	UpdatedAt time.Time  `json:"updatedAt"`
 }
 
 func (u *User) CreateAdmin(email string, password string, firstName string, lastName string) (string, error) {
 	user := User{
-		Email: email,
-		Password: password,
+		Email:     email,
+		Password:  password,
 		FirstName: firstName,
-		LastName: lastName,
-		IsAdmin: true,
+		LastName:  lastName,
+		IsAdmin:   true,
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), 14)
 
 	if err != nil {
-		return "",errors.New("failed to hash password")
+		return "", errors.New("failed to hash password")
 	}
 
 	user.Password = string(hashedPassword)
 
 	if err := DBConn.Create(&user).Error; err != nil {
-		return "",err
+		return "", err
 	}
 
 	return user.UserId, nil
@@ -64,8 +64,8 @@ func RevokeJWTByUserId(userId string) error {
 	if err != nil {
 		fmt.Println(err)
 		log.Fatal(err)
+		return err
 	}
-
 
 	fmt.Println("Revoked JWT for user ID:", userId)
 
@@ -74,7 +74,7 @@ func RevokeJWTByUserId(userId string) error {
 
 func GetUserById(id string) (*User, error) {
 	user := &User{}
-fmt.Println("id", id)
+
 	if err := DBConn.Model(&User{}).Where("user_id = ?", id).First(&user).Error; err != nil {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ fmt.Println("id", id)
 
 type RefreshToken struct {
 	ID        string `gorm:"type:uuid;default:uuid_generate_v4()" json:"id"`
-	UserID    string    `json:"userID"`
+	UserID    string `json:"userID"`
 	JTI       string `json:"jti"`
 	Expiry    string `json:"expiry"`
 	IsRevoked bool   `json:"isRevoked"`
@@ -92,10 +92,10 @@ type RefreshToken struct {
 
 func StoreJTI(jti string, userID string, refreshTokenExp string) error {
 	refreshToken := RefreshToken{
-		UserID:     userID,
-		JTI:        jti,
-		Expiry:     refreshTokenExp,
-		IsRevoked:  false,
+		UserID:    userID,
+		JTI:       jti,
+		Expiry:    refreshTokenExp,
+		IsRevoked: false,
 	}
 
 	if err := DBConn.Table("refresh_tokens").Create(&refreshToken).Error; err != nil {

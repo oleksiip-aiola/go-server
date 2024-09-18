@@ -1,12 +1,11 @@
 package routes
 
 import (
-	"github.com/alexey-petrov/go-server/server/routes/searchRoutes"
+	searchRoutes "github.com/alexey-petrov/go-server/server/routes/search"
 	"github.com/alexey-petrov/go-server/server/routes/todoRoutes"
 	"github.com/alexey-petrov/go-server/server/routes/userRoutes"
 	"github.com/gofiber/fiber/v2"
 )
-
 
 func SetRoutes(app *fiber.App) {
 
@@ -17,11 +16,9 @@ func SetRoutes(app *fiber.App) {
 	searchRoutes.SearchRoutes(app)
 }
 
-
 func initEndpoints(app *fiber.App) {
 	app.Get("api/healthcheck", helloHandler)
 }
-
 
 func helloHandler(c *fiber.Ctx) error {
 	return c.SendString("Access Granted")
