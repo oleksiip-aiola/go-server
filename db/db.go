@@ -25,12 +25,18 @@ func InitDB() {
 	dbUser := os.Getenv("DB_USER")
 	dbPassword := os.Getenv("DB_PASSWORD")
 	dbName := os.Getenv("DB_NAME")
+	prodUrl := os.Getenv("POSTGRES_PROD_URL")
 
-	fmt.Printf("Connecting to database postgres://%s:%s@%s/%s?sslmode=disable", dbUser, dbPassword, dbUrl, dbName)
+	if prodUrl != "" {
+		fmt.Printf("Connecting to database %s", prodUrl)
+		DBConn, err = gorm.Open(postgres.Open(prodUrl), &gorm.Config{})
+	} else {
+		fmt.Printf("Connecting to database postgres://%s:%s@%s/%s?sslmode=disable", dbUser, dbPassword, dbUrl, dbName)
+		connStr := fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable", dbUser, dbPassword, dbUrl, dbName)
+		DBConn, err = gorm.Open(postgres.Open(connStr), &gorm.Config{})
+	}
 
 	// Connection string (replace with your actual PostgreSQL credentials)
-	connStr := fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable", dbUser, dbPassword, dbUrl, dbName)
-	DBConn, err = gorm.Open(postgres.Open(connStr), &gorm.Config{})
 
 	if err != nil {
 		panic("Failed to connect to database!")

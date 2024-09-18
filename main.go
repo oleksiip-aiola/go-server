@@ -13,6 +13,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/compress"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/joho/godotenv"
 )
 
 func establishdbConnection() {
@@ -28,7 +29,7 @@ func establishdbConnection() {
 func main() {
 	// Connect to the database
 	establishdbConnection()
-
+	godotenv.Load()
 	app := fiber.New(fiber.Config{
 		IdleTimeout: 5,
 	})
@@ -46,7 +47,7 @@ func main() {
 	handleLogFatal(app)
 
 	go func() {
-		if error := app.Listen(":4000"); error != nil {
+		if error := app.Listen(":" + os.Getenv("PORT")); error != nil {
 			log.Panic(error)
 		}
 	}()
@@ -62,6 +63,5 @@ func main() {
 }
 
 func handleLogFatal(app *fiber.App) {
-	log.Fatal(app.Listen(":4000"))
-
+	log.Fatal(app.Listen(":" + os.Getenv("PORT")))
 }
