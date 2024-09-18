@@ -7,9 +7,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/alexey-petrov/go-server/server/db"
-	"github.com/alexey-petrov/go-server/server/routes"
-	"github.com/alexey-petrov/go-server/server/utils"
+	"github.com/alexey-petrov/go-server/db"
+	"github.com/alexey-petrov/go-server/routes"
+	"github.com/alexey-petrov/go-server/utils"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/compress"
 	"github.com/gofiber/fiber/v2/middleware/cors"

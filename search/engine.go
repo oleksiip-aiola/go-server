@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/alexey-petrov/go-server/server/db"
+	"github.com/alexey-petrov/go-server/db"
 )
 
 func RunEngine() {

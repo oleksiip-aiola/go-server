@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	// Add this line
-	"github.com/alexey-petrov/go-server/server/db"
-	"github.com/alexey-petrov/go-server/server/jwtService"
+	"github.com/alexey-petrov/go-server/db"
+	"github.com/alexey-petrov/go-server/jwtService"
 )
 
 type User struct {

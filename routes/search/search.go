@@ -1,7 +1,7 @@
 package searchRoutes
 
 import (
-	"github.com/alexey-petrov/go-server/server/db"
+	"github.com/alexey-petrov/go-server/db"
 	"github.com/gofiber/fiber/v2"
 )
 

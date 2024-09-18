@@ -1,6 +1,6 @@
 package search
 
-import "github.com/alexey-petrov/go-server/server/db"
+import "github.com/alexey-petrov/go-server/db"
 
 // memory rep of search index. Inverted index ( keys = words/values, words/values = keys )
 type Index map[string][]string

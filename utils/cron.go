@@ -3,7 +3,7 @@ package utils
 import (
 	"fmt"
 
-	"github.com/alexey-petrov/go-server/server/search"
+	"github.com/alexey-petrov/go-server/search"
 	"github.com/robfig/cron"
 )
 

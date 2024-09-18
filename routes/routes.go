@@ -1,9 +1,9 @@
 package routes
 
 import (
-	searchRoutes "github.com/alexey-petrov/go-server/server/routes/search"
-	"github.com/alexey-petrov/go-server/server/routes/todoRoutes"
-	"github.com/alexey-petrov/go-server/server/routes/userRoutes"
+	searchRoutes "github.com/alexey-petrov/go-server/routes/search"
+	"github.com/alexey-petrov/go-server/routes/todoRoutes"
+	"github.com/alexey-petrov/go-server/routes/userRoutes"
 	"github.com/gofiber/fiber/v2"
 )
 

@@ -1,9 +1,9 @@
 package userRoutes
 
 import (
-	"github.com/alexey-petrov/go-server/server/auth"
-	"github.com/alexey-petrov/go-server/server/jwtService"
-	"github.com/alexey-petrov/go-server/server/structs"
+	"github.com/alexey-petrov/go-server/auth"
+	"github.com/alexey-petrov/go-server/jwtService"
+	"github.com/alexey-petrov/go-server/structs"
 	"github.com/gofiber/fiber/v2"
 )
 
