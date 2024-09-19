@@ -13,6 +13,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/compress"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/joho/godotenv"
 )
 
 func establishdbConnection() {
@@ -26,14 +27,20 @@ func establishdbConnection() {
 }
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		fmt.Println("Error loading .env file")
+	}
 	// Connect to the database
 	establishdbConnection()
 	app := fiber.New(fiber.Config{
 		IdleTimeout: 5,
 	})
 
+	publicUrl := os.Getenv("PUBLIC_URL")
+
 	app.Use(cors.New(cors.Config{
-		AllowOrigins:     "http://localhost:3000",
+		AllowOrigins:     fmt.Sprintf("http://localhost:3000, %s", publicUrl),
 		AllowHeaders:     "Origin, Content-Type, Accept, Authorization",
 		AllowCredentials: true,
 	}))
