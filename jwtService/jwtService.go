@@ -30,27 +30,47 @@ var REFRESH_TOKEN_EXPIRATION = 7 * ACCESS_TOKEN_EXPIRATION
 
 // Store JTI in HTTP-only cookie
 func SetRefreshCookie(c *fiber.Ctx, jti string) {
+	publicUrl := os.Getenv("PUBLIC_URL")
+
+	sameSite := "Lax"
+	secure := true
+
+	if publicUrl != "" {
+		sameSite = "None"
+		secure = false
+	}
+
 	c.Cookie(&fiber.Cookie{
 		Name:     os.Getenv("JTI_COOKIE_NAME"),             // Name of the cookie to store JTI
 		Value:    jti,                                      // JTI as value
 		Expires:  time.Now().Add(REFRESH_TOKEN_EXPIRATION), // Cookie expiry matches refresh token expiry
 		HTTPOnly: true,                                     // HTTP-only, prevents JavaScript access
 		// @TODO: Set Secure to true/Strict in production
-		Secure:   true,   // Send only over HTTPS
-		SameSite: "None", // Prevent CSRF attacks
+		Secure:   secure,   // Send only over HTTPS
+		SameSite: sameSite, // Prevent CSRF attacks
 	})
 }
 
 // Store JTI in HTTP-only cookie
 func SetAccessTokenCookie(c *fiber.Ctx, token string) {
+	publicUrl := os.Getenv("PUBLIC_URL")
+
+	sameSite := "Lax"
+	secure := true
+
+	if publicUrl != "" {
+		sameSite = "None"
+		secure = false
+	}
+
 	c.Cookie(&fiber.Cookie{
 		Name:     os.Getenv("ACCESS_TOKEN_COOKIE_NAME"),   // Name of the cookie to store JTI
 		Value:    token,                                   // JTI as value
 		Expires:  time.Now().Add(ACCESS_TOKEN_EXPIRATION), // Cookie expiry matches refresh token expiry
 		HTTPOnly: true,                                    // HTTP-only, prevents JavaScript access
 		// @TODO: Set Secure to true/Strict in production
-		Secure:   true,   // Send only over HTTPS
-		SameSite: "None", // Prevent CSRF attacks
+		Secure:   secure,   // Send only over HTTPS
+		SameSite: sameSite, // Prevent CSRF attacks
 	})
 }
 
