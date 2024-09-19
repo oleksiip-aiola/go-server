@@ -48,7 +48,17 @@ func SetRefreshCookie(c *fiber.Ctx, jti string) {
 		// @TODO: Set Secure to true/Strict in production
 		Secure:   secure,   // Send only over HTTPS
 		SameSite: sameSite, // Prevent CSRF attacks
-		Domain:   ".railway.app",
+	})
+
+	c.Cookie(&fiber.Cookie{
+		Name:     os.Getenv("JTI_COOKIE_NAME"),             // Name of the cookie to store JTI
+		Value:    jti,                                      // JTI as value
+		Expires:  time.Now().Add(REFRESH_TOKEN_EXPIRATION), // Cookie expiry matches refresh token expiry
+		HTTPOnly: true,                                     // HTTP-only, prevents JavaScript access
+		// @TODO: Set Secure to true/Strict in production
+		Secure:   secure,   // Send only over HTTPS
+		SameSite: sameSite, // Prevent CSRF attacks
+		Domain:   "https://localhost:3000",
 	})
 }
 
@@ -72,7 +82,16 @@ func SetAccessTokenCookie(c *fiber.Ctx, token string) {
 		// @TODO: Set Secure to true/Strict in production
 		Secure:   secure,   // Send only over HTTPS
 		SameSite: sameSite, // Prevent CSRF attacks
-		Domain:   ".railway.app",
+	})
+	c.Cookie(&fiber.Cookie{
+		Name:     os.Getenv("ACCESS_TOKEN_COOKIE_NAME"),   // Name of the cookie to store JTI
+		Value:    token,                                   // JTI as value
+		Expires:  time.Now().Add(ACCESS_TOKEN_EXPIRATION), // Cookie expiry matches refresh token expiry
+		HTTPOnly: true,                                    // HTTP-only, prevents JavaScript access
+		// @TODO: Set Secure to true/Strict in production
+		Secure:   secure,   // Send only over HTTPS
+		SameSite: sameSite, // Prevent CSRF attacks
+		Domain:   "https://localhost:3000",
 	})
 }
 
