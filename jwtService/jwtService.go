@@ -51,7 +51,7 @@ func SetRefreshCookie(c *fiber.Ctx, jti string) {
 	})
 
 	c.Cookie(&fiber.Cookie{
-		Name:     os.Getenv("JTI_COOKIE_NAME"),             // Name of the cookie to store JTI
+		Name:     "ues",                                    // Name of the cookie to store JTI
 		Value:    jti,                                      // JTI as value
 		Expires:  time.Now().Add(REFRESH_TOKEN_EXPIRATION), // Cookie expiry matches refresh token expiry
 		HTTPOnly: true,                                     // HTTP-only, prevents JavaScript access
@@ -84,7 +84,7 @@ func SetAccessTokenCookie(c *fiber.Ctx, token string) {
 		SameSite: sameSite, // Prevent CSRF attacks
 	})
 	c.Cookie(&fiber.Cookie{
-		Name:     os.Getenv("ACCESS_TOKEN_COOKIE_NAME"),   // Name of the cookie to store JTI
+		Name:     "kes",                                   // Name of the cookie to store JTI
 		Value:    token,                                   // JTI as value
 		Expires:  time.Now().Add(ACCESS_TOKEN_EXPIRATION), // Cookie expiry matches refresh token expiry
 		HTTPOnly: true,                                    // HTTP-only, prevents JavaScript access
