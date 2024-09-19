@@ -36,8 +36,8 @@ func SetRefreshCookie(c *fiber.Ctx, jti string) {
 		Expires:  time.Now().Add(REFRESH_TOKEN_EXPIRATION), // Cookie expiry matches refresh token expiry
 		HTTPOnly: true,                                     // HTTP-only, prevents JavaScript access
 		// @TODO: Set Secure to true/Strict in production
-		Secure:   false, // Send only over HTTPS
-		SameSite: "Lax", // Prevent CSRF attacks
+		Secure:   true,   // Send only over HTTPS
+		SameSite: "None", // Prevent CSRF attacks
 	})
 }
 
@@ -49,8 +49,8 @@ func SetAccessTokenCookie(c *fiber.Ctx, token string) {
 		Expires:  time.Now().Add(ACCESS_TOKEN_EXPIRATION), // Cookie expiry matches refresh token expiry
 		HTTPOnly: true,                                    // HTTP-only, prevents JavaScript access
 		// @TODO: Set Secure to true/Strict in production
-		Secure:   false, // Send only over HTTPS
-		SameSite: "Lax", // Prevent CSRF attacks
+		Secure:   true,   // Send only over HTTPS
+		SameSite: "None", // Prevent CSRF attacks
 	})
 }
 
