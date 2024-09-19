@@ -55,7 +55,7 @@ func main() {
 	handleLogFatal(app)
 
 	go func() {
-		if error := app.Listen(":" + os.Getenv("APP_PORT")); error != nil {
+		if error := app.Listen(":" + os.Getenv("PORT")); error != nil {
 			log.Panic(error)
 		}
 	}()
@@ -71,5 +71,5 @@ func main() {
 }
 
 func handleLogFatal(app *fiber.App) {
-	log.Fatal(app.Listen(":" + os.Getenv("APP_PORT")))
+	log.Fatal(app.Listen(":" + os.Getenv("PORT")))
 }
