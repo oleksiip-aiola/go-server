@@ -1,10 +1,13 @@
 package userRoutes
 
 import (
+	"errors"
+
 	"github.com/alexey-petrov/go-server/auth"
 	"github.com/alexey-petrov/go-server/jwtService"
 	"github.com/alexey-petrov/go-server/structs"
 	"github.com/gofiber/fiber/v2"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func UserRoutes(app *fiber.App) {
@@ -74,7 +77,15 @@ func handleLogin(c *fiber.Ctx) error {
 		return err
 	}
 
-	accessToken, refreshToken, err := auth.Login(user.Email, user.Password)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), 14)
+
+	if err != nil {
+		return errors.New("failed to hash password when logging in")
+	}
+
+	password := string(hashedPassword)
+
+	accessToken, refreshToken, err := auth.Login(user.Email, password)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to generate JWT",
