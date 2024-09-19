@@ -48,7 +48,6 @@ func SetRefreshCookie(c *fiber.Ctx, jti string) {
 		// @TODO: Set Secure to true/Strict in production
 		Secure:   secure,   // Send only over HTTPS
 		SameSite: sameSite, // Prevent CSRF attacks
-		Domain:   ".vercel.app",
 	})
 }
 
@@ -72,7 +71,6 @@ func SetAccessTokenCookie(c *fiber.Ctx, token string) {
 		// @TODO: Set Secure to true/Strict in production
 		Secure:   secure,   // Send only over HTTPS
 		SameSite: sameSite, // Prevent CSRF attacks
-		Domain:   ".vercel.app",
 	})
 }
 
