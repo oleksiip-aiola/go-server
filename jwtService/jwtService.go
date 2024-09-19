@@ -48,6 +48,7 @@ func SetRefreshCookie(c *fiber.Ctx, jti string) {
 		// @TODO: Set Secure to true/Strict in production
 		Secure:   secure,   // Send only over HTTPS
 		SameSite: sameSite, // Prevent CSRF attacks
+		Domain:   os.Getenv("PUBLIC_DOMAIN"),
 	})
 }
 
@@ -71,6 +72,7 @@ func SetAccessTokenCookie(c *fiber.Ctx, token string) {
 		// @TODO: Set Secure to true/Strict in production
 		Secure:   secure,   // Send only over HTTPS
 		SameSite: sameSite, // Prevent CSRF attacks
+		Domain:   os.Getenv("PUBLIC_DOMAIN"),
 	})
 }
 
