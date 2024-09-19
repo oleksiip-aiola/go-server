@@ -46,10 +46,9 @@ func SetRefreshCookie(c *fiber.Ctx, jti string) {
 		Expires:  time.Now().Add(REFRESH_TOKEN_EXPIRATION), // Cookie expiry matches refresh token expiry
 		HTTPOnly: true,                                     // HTTP-only, prevents JavaScript access
 		// @TODO: Set Secure to true/Strict in production
-		Secure:      secure,   // Send only over HTTPS
-		SameSite:    sameSite, // Prevent CSRF attacks
-		SessionOnly: false,
-		Domain:      ".vercel.app",
+		Secure:   secure,   // Send only over HTTPS
+		SameSite: sameSite, // Prevent CSRF attacks
+		Domain:   ".vercel.app",
 	})
 }
 
@@ -71,10 +70,9 @@ func SetAccessTokenCookie(c *fiber.Ctx, token string) {
 		Expires:  time.Now().Add(ACCESS_TOKEN_EXPIRATION), // Cookie expiry matches refresh token expiry
 		HTTPOnly: true,                                    // HTTP-only, prevents JavaScript access
 		// @TODO: Set Secure to true/Strict in production
-		Secure:      secure,   // Send only over HTTPS
-		SameSite:    sameSite, // Prevent CSRF attacks
-		SessionOnly: false,
-		Domain:      ".vercel.app",
+		Secure:   secure,   // Send only over HTTPS
+		SameSite: sameSite, // Prevent CSRF attacks
+		Domain:   ".vercel.app",
 	})
 }
 
