@@ -33,10 +33,11 @@ func SetRefreshCookie(c *fiber.Ctx, jti string) {
 	publicUrl := os.Getenv("PUBLIC_URL")
 
 	sameSite := "Lax"
-	secure := true
+	secure := false
 
 	if publicUrl != "" {
 		sameSite = "None"
+		secure = true
 	}
 
 	c.Cookie(&fiber.Cookie{
@@ -47,6 +48,7 @@ func SetRefreshCookie(c *fiber.Ctx, jti string) {
 		// @TODO: Set Secure to true/Strict in production
 		Secure:   secure,   // Send only over HTTPS
 		SameSite: sameSite, // Prevent CSRF attacks
+		Domain:   "https://localhost:3000",
 	})
 }
 
@@ -55,11 +57,11 @@ func SetAccessTokenCookie(c *fiber.Ctx, token string) {
 	publicUrl := os.Getenv("PUBLIC_URL")
 
 	sameSite := "Lax"
-	secure := true
+	secure := false
 
 	if publicUrl != "" {
 		sameSite = "None"
-		secure = false
+		secure = true
 	}
 
 	c.Cookie(&fiber.Cookie{
@@ -70,6 +72,7 @@ func SetAccessTokenCookie(c *fiber.Ctx, token string) {
 		// @TODO: Set Secure to true/Strict in production
 		Secure:   secure,   // Send only over HTTPS
 		SameSite: sameSite, // Prevent CSRF attacks
+		Domain:   "https://localhost:3000",
 	})
 }
 

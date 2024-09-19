@@ -37,16 +37,14 @@ func main() {
 		IdleTimeout: 5,
 	})
 
-	publicUrl := os.Getenv("PUBLIC_URL")
-
 	app.Use(cors.New(cors.Config{
-		AllowOrigins:     fmt.Sprintf("http://localhost:3000,https://localhost:3000,%s", publicUrl),
+		AllowOrigins:     fmt.Sprint("http://localhost:3000,https://localhost:3000"),
 		AllowHeaders:     "Origin, Content-Type, Accept, Authorization",
 		AllowCredentials: true,
 	}))
 
 	app.Options("*", cors.New(cors.Config{
-		AllowOrigins:     fmt.Sprintf("http://localhost:3000,https://localhost:3000,%s", publicUrl),
+		AllowOrigins:     fmt.Sprint("http://localhost:3000,https://localhost:3000"),
 		AllowCredentials: true,
 	}))
 
@@ -57,7 +55,7 @@ func main() {
 	handleLogFatal(app)
 
 	go func() {
-		if error := app.Listen(":" + os.Getenv("PORT")); error != nil {
+		if error := app.Listen(":" + os.Getenv("APP_PORT")); error != nil {
 			log.Panic(error)
 		}
 	}()
@@ -73,5 +71,5 @@ func main() {
 }
 
 func handleLogFatal(app *fiber.App) {
-	log.Fatal(app.Listen(":" + os.Getenv("PORT")))
+	log.Fatal(app.Listen(":" + os.Getenv("APP_PORT")))
 }
