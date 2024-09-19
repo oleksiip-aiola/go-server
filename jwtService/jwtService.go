@@ -37,7 +37,6 @@ func SetRefreshCookie(c *fiber.Ctx, jti string) {
 
 	if publicUrl != "" {
 		sameSite = "None"
-		secure = false
 	}
 
 	c.Cookie(&fiber.Cookie{
