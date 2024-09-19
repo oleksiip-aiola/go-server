@@ -40,8 +40,13 @@ func main() {
 	publicUrl := os.Getenv("PUBLIC_URL")
 
 	app.Use(cors.New(cors.Config{
-		AllowOrigins:     fmt.Sprintf("http://localhost:3000, %s", publicUrl),
+		AllowOrigins:     fmt.Sprintf("http://localhost:3000,https://localhost:3000,%s", publicUrl),
 		AllowHeaders:     "Origin, Content-Type, Accept, Authorization",
+		AllowCredentials: true,
+	}))
+
+	app.Options("*", cors.New(cors.Config{
+		AllowOrigins:     fmt.Sprintf("http://localhost:3000,https://localhost:3000,%s", publicUrl),
 		AllowCredentials: true,
 	}))
 
