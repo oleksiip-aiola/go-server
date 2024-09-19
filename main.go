@@ -41,12 +41,13 @@ func main() {
 
 	app.Use(cors.New(cors.Config{
 		AllowOrigins:     fmt.Sprintf("http://localhost:3000,https://localhost:3000,%s", publicUrl),
-		AllowHeaders:     "Origin, Content-Type, Accept, Authorization",
+		AllowHeaders:     "Origin, Content-Type, Accept, Authorization, Set-Cookie",
 		AllowCredentials: true,
 	}))
 
 	app.Options("*", cors.New(cors.Config{
 		AllowOrigins:     fmt.Sprintf("http://localhost:3000,https://localhost:3000,%s", publicUrl),
+		AllowHeaders:     "Origin, Content-Type, Accept, Authorization, Set-Cookie",
 		AllowCredentials: true,
 	}))
 
