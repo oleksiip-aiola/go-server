@@ -51,7 +51,7 @@ func handleLogout(c *fiber.Ctx) error {
 		fmt.Println(err)
 		return err
 	}
-	fmt.Println("userId", user)
+
 	err := jwtService.HandleInvalidateUserSession(user.ID)
 
 	if err != nil {
