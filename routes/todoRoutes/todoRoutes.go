@@ -26,8 +26,11 @@ func TodoRoutes(app *fiber.App) {
 	})
 
 	app.Post("api/todos", func(c *fiber.Ctx) error {
-		jwtService.VerifyTokenProtectedRoute(c)
+		err := jwtService.VerifyTokenProtectedRoute(c)
 
+		if err != nil {
+			return nil
+		}
 		todo := &structs.Todo{}
 
 		if err := c.BodyParser(todo); err != nil {
