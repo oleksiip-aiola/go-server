@@ -105,7 +105,6 @@ func DeleteAccessTokenCookie(c *fiber.Ctx) {
 	c.Cookie(&fiber.Cookie{
 		Name:     os.Getenv("ACCESS_TOKEN_COOKIE_NAME"),
 		Value:    "",
-		Expires:  time.Now().Add(-1 * time.Hour),
 		MaxAge:   -1,
 		HTTPOnly: true,
 		Secure:   true,
