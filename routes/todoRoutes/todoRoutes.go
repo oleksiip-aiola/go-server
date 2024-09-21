@@ -19,37 +19,15 @@ func TodoRoutes(app *fiber.App) {
 	todos := []structs.Todo{}
 
 	app.Get("api/todos", func(c *fiber.Ctx) error {
-		// Check if Authorization header exists
-		authHeader := c.Get("Authorization")
-		if authHeader == "" {
-			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-				"error": "Missing Authorization header",
-			})
-		}
-
-		// Extract JWT token from Authorization header
-		accessTokenCookie := authHeader[len("Bearer "):]
-		// accessTokenCookie := c.Cookies(os.Getenv("ACCESS_TOKEN_COOKIE_NAME"))
-
-		_, verificationError := jwtService.VerifyToken(accessTokenCookie)
-
-		if verificationError != nil {
-			if verificationError.Error() == "access token expired" {
-				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-					"error": "Invalid JWT token",
-				})
-			} else {
-				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-					"error": "Invalid JWT token",
-				})
-			}
-		}
+		jwtService.VerifyTokenProtectedRoute(c)
 
 		// Continue with the API logic
 		return c.JSON(todos)
 	})
 
 	app.Post("api/todos", func(c *fiber.Ctx) error {
+		jwtService.VerifyTokenProtectedRoute(c)
+
 		todo := &structs.Todo{}
 
 		if err := c.BodyParser(todo); err != nil {
@@ -64,6 +42,8 @@ func TodoRoutes(app *fiber.App) {
 	})
 
 	app.Put("api/todos/:id", func(c *fiber.Ctx) error {
+		jwtService.VerifyTokenProtectedRoute(c)
+
 		id, err := c.ParamsInt("id")
 
 		if err != nil {
@@ -105,6 +85,8 @@ func TodoRoutes(app *fiber.App) {
 	})
 
 	app.Patch("api/todos/:id/status", func(c *fiber.Ctx) error {
+		jwtService.VerifyTokenProtectedRoute(c)
+
 		id, err := c.ParamsInt("id")
 
 		if err != nil {
@@ -126,6 +108,8 @@ func TodoRoutes(app *fiber.App) {
 	})
 
 	app.Delete("api/todos/:id", func(c *fiber.Ctx) error {
+		jwtService.VerifyTokenProtectedRoute(c)
+
 		id, err := c.ParamsInt("id")
 
 		if err != nil {

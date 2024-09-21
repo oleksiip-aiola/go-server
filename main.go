@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/alexey-petrov/go-server/db"
 	"github.com/alexey-petrov/go-server/routes"
@@ -34,7 +35,7 @@ func main() {
 	// Connect to the database
 	establishdbConnection()
 	app := fiber.New(fiber.Config{
-		IdleTimeout: 5,
+		IdleTimeout: 5 * time.Second,
 	})
 
 	publicUrl := os.Getenv("PUBLIC_URL")

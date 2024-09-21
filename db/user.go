@@ -46,6 +46,7 @@ func (u *User) CreateAdmin(email string, password string, firstName string, last
 }
 
 func (u *User) LoginAsAdmin(email string, password string) (*User, error) {
+	fmt.Println(email)
 	if err := DBConn.Where("email = ? AND is_admin = ?", email, true).First(&u).Error; err != nil {
 		return nil, errors.New("user not found")
 	}
