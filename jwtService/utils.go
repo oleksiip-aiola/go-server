@@ -8,13 +8,13 @@ import (
 
 func VerifyTokenProtectedRoute(c *fiber.Ctx) error {
 	authHeader := c.Get("Authorization")
-
+	fmt.Println(authHeader)
 	if authHeader == "" {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"error": "Missing Authorization header",
 		})
 	}
-
+	fmt.Println("post auth header")
 	// Extract JWT token from Authorization header
 	accessTokenCookie := authHeader[len("Bearer "):]
 

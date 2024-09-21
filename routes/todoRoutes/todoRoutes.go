@@ -1,6 +1,8 @@
 package todoRoutes
 
 import (
+	"fmt"
+
 	"github.com/alexey-petrov/go-server/jwtService"
 	"github.com/alexey-petrov/go-server/structs"
 	"github.com/gofiber/fiber/v2"
@@ -26,8 +28,9 @@ func TodoRoutes(app *fiber.App) {
 	})
 
 	app.Post("api/todos", func(c *fiber.Ctx) error {
+		fmt.Println("POST /api/todos")
 		err := jwtService.VerifyTokenProtectedRoute(c)
-
+		fmt.Println(err)
 		if err != nil {
 			return nil
 		}
@@ -40,6 +43,7 @@ func TodoRoutes(app *fiber.App) {
 		todo.ID = len(todos) + 1
 
 		todos = append(todos, *todo)
+		fmt.Println("POST /api/todos")
 
 		return c.JSON(todos)
 	})
