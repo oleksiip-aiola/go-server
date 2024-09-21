@@ -26,9 +26,9 @@ func generateJTI() (string, error) {
 }
 
 var ACCESS_TOKEN_EXPIRATION = 24 * time.Hour
-var ACCESS_TOKEN_EXPIRATION_DEVELOPMENT = ACCESS_TOKEN_EXPIRATION * 7
 
 var REFRESH_TOKEN_EXPIRATION = 7 * ACCESS_TOKEN_EXPIRATION
+var ACCESS_TOKEN_EXPIRATION_DEVELOPMENT = REFRESH_TOKEN_EXPIRATION
 
 func isDevelopment() bool {
 	return os.Getenv("ENV") == "development"
@@ -74,16 +74,16 @@ func SetAccessTokenCookie(c *fiber.Ctx, token string) {
 		domain = publicDomain
 	}
 
-	// expires := ACCESS_TOKEN_EXPIRATION
+	expires := ACCESS_TOKEN_EXPIRATION
 
-	// if isDevelopment() {
-	// 	expires = ACCESS_TOKEN_EXPIRATION_DEVELOPMENT
-	// }
+	if isDevelopment() {
+		expires = ACCESS_TOKEN_EXPIRATION_DEVELOPMENT
+	}
 
 	c.Cookie(&fiber.Cookie{
 		Name:     os.Getenv("ACCESS_TOKEN_COOKIE_NAME"), // Name of the cookie to store JTI
 		Value:    token,                                 // JTI as value
-		Expires:  time.Now().Add(24 * time.Hour),        // Cookie expiry matches refresh token expiry
+		Expires:  time.Now().Add(expires),               // Cookie expiry matches refresh token expiry
 		HTTPOnly: true,                                  // HTTP-only, prevents JavaScript access
 		// @TODO: Set Secure to true/Strict in production
 		Secure:   secure,   // Send only over HTTPS
