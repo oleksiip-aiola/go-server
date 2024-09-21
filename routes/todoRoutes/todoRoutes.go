@@ -21,7 +21,11 @@ func TodoRoutes(app *fiber.App) {
 	todos := []structs.Todo{}
 
 	app.Get("api/todos", func(c *fiber.Ctx) error {
-		jwtService.VerifyTokenProtectedRoute(c)
+		err := jwtService.VerifyTokenProtectedRoute(c)
+		fmt.Println(err)
+		if err != nil {
+			return nil
+		}
 
 		// Continue with the API logic
 		return c.JSON(todos)
@@ -49,7 +53,11 @@ func TodoRoutes(app *fiber.App) {
 	})
 
 	app.Put("api/todos/:id", func(c *fiber.Ctx) error {
-		jwtService.VerifyTokenProtectedRoute(c)
+		err := jwtService.VerifyTokenProtectedRoute(c)
+		fmt.Println(err)
+		if err != nil {
+			return nil
+		}
 
 		id, err := c.ParamsInt("id")
 
@@ -92,7 +100,11 @@ func TodoRoutes(app *fiber.App) {
 	})
 
 	app.Patch("api/todos/:id/status", func(c *fiber.Ctx) error {
-		jwtService.VerifyTokenProtectedRoute(c)
+		err := jwtService.VerifyTokenProtectedRoute(c)
+		fmt.Println(err)
+		if err != nil {
+			return nil
+		}
 
 		id, err := c.ParamsInt("id")
 
@@ -115,7 +127,11 @@ func TodoRoutes(app *fiber.App) {
 	})
 
 	app.Delete("api/todos/:id", func(c *fiber.Ctx) error {
-		jwtService.VerifyTokenProtectedRoute(c)
+		err := jwtService.VerifyTokenProtectedRoute(c)
+		fmt.Println(err)
+		if err != nil {
+			return nil
+		}
 
 		id, err := c.ParamsInt("id")
 
