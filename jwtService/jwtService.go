@@ -93,6 +93,15 @@ func SetAccessTokenCookie(c *fiber.Ctx, token string) {
 }
 
 func DeleteAccessTokenCookie(c *fiber.Ctx) {
+	publicDomain := os.Getenv("PUBLIC_DOMAIN")
+	publicUrl := os.Getenv("PUBLIC_URL")
+
+	domain := "/"
+
+	if publicUrl != "" {
+		domain = publicDomain
+	}
+
 	c.Cookie(&fiber.Cookie{
 		Name:     os.Getenv("ACCESS_TOKEN_COOKIE_NAME"),
 		Value:    "",
@@ -100,6 +109,7 @@ func DeleteAccessTokenCookie(c *fiber.Ctx) {
 		HTTPOnly: true,
 		Secure:   true,
 		SameSite: "None",
+		Domain:   domain,
 	})
 }
 
