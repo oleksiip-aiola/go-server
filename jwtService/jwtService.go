@@ -25,8 +25,14 @@ func generateJTI() (string, error) {
 	return base64.URLEncoding.EncodeToString(b), nil
 }
 
-var ACCESS_TOKEN_EXPIRATION = 7 * time.Second
+var ACCESS_TOKEN_EXPIRATION = 24 * time.Hour
+var ACCESS_TOKEN_EXPIRATION_DEVELOPMENT = ACCESS_TOKEN_EXPIRATION * 7
+
 var REFRESH_TOKEN_EXPIRATION = 7 * ACCESS_TOKEN_EXPIRATION
+
+func isDevelopment() bool {
+	return os.Getenv("ENV") == "development"
+}
 
 // Store JTI in HTTP-only cookie
 func SetRefreshCookie(c *fiber.Ctx, jti string) {
@@ -68,11 +74,17 @@ func SetAccessTokenCookie(c *fiber.Ctx, token string) {
 		domain = publicDomain
 	}
 
+	// expires := ACCESS_TOKEN_EXPIRATION
+
+	// if isDevelopment() {
+	// 	expires = ACCESS_TOKEN_EXPIRATION_DEVELOPMENT
+	// }
+
 	c.Cookie(&fiber.Cookie{
-		Name:     os.Getenv("ACCESS_TOKEN_COOKIE_NAME"),   // Name of the cookie to store JTI
-		Value:    token,                                   // JTI as value
-		Expires:  time.Now().Add(ACCESS_TOKEN_EXPIRATION), // Cookie expiry matches refresh token expiry
-		HTTPOnly: true,                                    // HTTP-only, prevents JavaScript access
+		Name:     os.Getenv("ACCESS_TOKEN_COOKIE_NAME"), // Name of the cookie to store JTI
+		Value:    token,                                 // JTI as value
+		Expires:  time.Now().Add(24 * time.Hour),        // Cookie expiry matches refresh token expiry
+		HTTPOnly: true,                                  // HTTP-only, prevents JavaScript access
 		// @TODO: Set Secure to true/Strict in production
 		Secure:   secure,   // Send only over HTTPS
 		SameSite: sameSite, // Prevent CSRF attacks
