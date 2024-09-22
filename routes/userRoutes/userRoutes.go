@@ -7,6 +7,7 @@ import (
 	"github.com/alexey-petrov/go-server/jwtService"
 	"github.com/alexey-petrov/go-server/structs"
 	"github.com/gofiber/fiber/v2"
+	"gorm.io/gorm"
 )
 
 func UserRoutes(app *fiber.App) {
@@ -21,6 +22,12 @@ func UserRoutes(app *fiber.App) {
 		token, err := auth.Auth(*user)
 
 		if err != nil {
+			fmt.Println("HERE")
+			if err == gorm.ErrDuplicatedKey {
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+					"error": "User already exists",
+				})
+			}
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"error":  "Failed to register",
 				"detail": err.Error(),
