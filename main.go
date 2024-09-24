@@ -25,6 +25,9 @@ func establishdbConnection() {
 	db.CreateTable()
 	db.CreateJTITable()
 	db.CreateSearchSettingsTable()
+
+	//Glow up
+	db.CreateUserMoodRecordsTable()
 }
 
 func main() {
@@ -39,15 +42,20 @@ func main() {
 	})
 
 	publicUrl := os.Getenv("PUBLIC_URL")
+	allowedOrigins := "http://localhost:3000,https://localhost:3000"
+
+	if publicUrl != "" {
+		allowedOrigins = fmt.Sprintf("%s, %s", allowedOrigins, publicUrl)
+	}
 
 	app.Use(cors.New(cors.Config{
-		AllowOrigins:     fmt.Sprintf("http://localhost:3000,https://localhost:3000,%s", publicUrl),
+		AllowOrigins:     allowedOrigins,
 		AllowHeaders:     "Origin, Content-Type, Accept, Authorization, Set-Cookie",
 		AllowCredentials: true,
 	}))
 
 	app.Options("*", cors.New(cors.Config{
-		AllowOrigins:     fmt.Sprintf("http://localhost:3000,https://localhost:3000,%s", publicUrl),
+		AllowOrigins:     allowedOrigins,
 		AllowHeaders:     "Origin, Content-Type, Accept, Authorization, Set-Cookie",
 		AllowCredentials: true,
 	}))

@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"github.com/alexey-petrov/go-server/routes/glowUpRoutes"
 	searchRoutes "github.com/alexey-petrov/go-server/routes/search"
 	"github.com/alexey-petrov/go-server/routes/todoRoutes"
 	"github.com/alexey-petrov/go-server/routes/userRoutes"
@@ -14,6 +15,7 @@ func SetRoutes(app *fiber.App) {
 	todoRoutes.TodoRoutes(app)
 	userRoutes.UserRoutes(app)
 	searchRoutes.SearchRoutes(app)
+	glowUpRoutes.InitGlowUpRoutes(app)
 }
 
 func initEndpoints(app *fiber.App) {

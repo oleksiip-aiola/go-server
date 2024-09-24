@@ -6,6 +6,7 @@ import (
 	// Add this line
 	"github.com/alexey-petrov/go-server/db"
 	"github.com/alexey-petrov/go-server/jwtService"
+	"github.com/gofiber/fiber/v2"
 )
 
 type User struct {
@@ -35,10 +36,17 @@ func Auth(user User) (string, error) {
 	return token, err
 }
 
-func Login(email string, password string) (string, error) {
+func Login(c *fiber.Ctx, email string, password string) (string, error) {
 	// Example: generate a JWT for user with ID 123
 	user := db.User{}
-	userData, _ := user.LoginAsAdmin(email, password)
+	userData, err := user.LoginAsAdmin(email, password)
+
+	if err != nil {
+		return "", c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error":  "Failed to login",
+			"detail": "No such user",
+		})
+	}
 
 	jwtService.RevokeJWTByUserId(userData.UserId)
 

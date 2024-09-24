@@ -43,7 +43,7 @@ func InitDB() {
 		panic("Failed to create extension!")
 	}
 
-	err = DBConn.AutoMigrate(&User{}, &SearchSettings{}, &CrawledUrl{}, &SearchIndex{})
+	err = DBConn.AutoMigrate(&User{}, &SearchSettings{}, &CrawledUrl{}, &SearchIndex{}, &MoodScore{})
 
 	if err != nil {
 		fmt.Println("Failed to migrate database!")
@@ -96,6 +96,25 @@ func CreateSearchSettingsTable() {
 		updated_at TIMESTAMPTZ NOT NULL,
     	search_on BOOLEAN DEFAULT FALSE,
     	add_new BOOLEAN DEFAULT FALSE
+	);`
+
+	if err := DBConn.Exec(query).Error; err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("Search settings Table created successfully!")
+}
+
+func CreateUserMoodRecordsTable() {
+	query := `
+	CREATE TABLE IF NOT EXISTS user_mood_records (
+    	id SERIAL PRIMARY KEY,
+    	user_id INTEGER NOT NULL,
+    	year INTEGER NOT NULL,
+    	month INTEGER NOT NULL,
+    	day INTEGER NOT NULL,
+		updated_at TIMESTAMPTZ NOT NULL,
+		created_at TIMESTAMPTZ NOT NULL
 	);`
 
 	if err := DBConn.Exec(query).Error; err != nil {

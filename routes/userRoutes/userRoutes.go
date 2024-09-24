@@ -22,7 +22,6 @@ func UserRoutes(app *fiber.App) {
 		token, err := auth.Auth(*user)
 
 		if err != nil {
-			fmt.Println("HERE")
 			if err == gorm.ErrDuplicatedKey {
 				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 					"error": "User already exists",
@@ -101,7 +100,7 @@ func handleLogin(c *fiber.Ctx) error {
 		return err
 	}
 
-	accessToken, err := auth.Login(user.Email, user.Password)
+	accessToken, err := auth.Login(c, user.Email, user.Password)
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to generate JWT",

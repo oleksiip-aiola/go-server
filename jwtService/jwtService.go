@@ -41,7 +41,7 @@ func SetRefreshCookie(c *fiber.Ctx, jti string) {
 
 	sameSite := "Lax"
 	secure := false
-	domain := "/"
+	domain := "localhost"
 
 	if publicUrl != "" {
 		secure = true
@@ -67,7 +67,7 @@ func SetAccessTokenCookie(c *fiber.Ctx, token string) {
 
 	sameSite := "Lax"
 	secure := false
-	domain := "/"
+	domain := "localhost"
 
 	if publicUrl != "" {
 		secure = true
@@ -96,7 +96,7 @@ func DeleteAccessTokenCookie(c *fiber.Ctx) {
 	publicDomain := os.Getenv("PUBLIC_DOMAIN")
 	publicUrl := os.Getenv("PUBLIC_URL")
 
-	domain := "/"
+	domain := "localhost"
 
 	if publicUrl != "" {
 		domain = publicDomain
