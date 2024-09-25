@@ -74,7 +74,6 @@ func handleLogout(c *fiber.Ctx) error {
 }
 
 func handleRefreshToken(c *fiber.Ctx) error {
-	fmt.Println("REFRESH TOKEN")
 	user := &structs.User{}
 
 	if err := c.BodyParser(user); err != nil {

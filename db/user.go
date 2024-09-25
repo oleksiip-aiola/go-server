@@ -42,11 +42,12 @@ func (u *User) CreateAdmin(email string, password string, firstName string, last
 		return "", err
 	}
 
+	QueueShardWrite(user)
+
 	return user.UserId, nil
 }
 
 func (u *User) LoginAsAdmin(email string, password string) (*User, error) {
-	fmt.Println(email)
 	if err := DBConn.Where("email = ? AND is_admin = ?", email, true).First(&u).Error; err != nil {
 		return nil, errors.New("user not found")
 	}
@@ -73,14 +74,10 @@ func RevokeJWTByUserId(userId string) error {
 	return nil
 }
 
-func GetUserById(id string) (*User, error) {
-	user := &User{}
+func GetUserById(id string) (User, error) {
+	user, err := ReadFromShard(id)
 
-	if err := DBConn.Model(&User{}).Where("user_id = ?", id).First(&user).Error; err != nil {
-		return nil, err
-	}
-
-	return user, nil
+	return user, err
 }
 
 type RefreshToken struct {
