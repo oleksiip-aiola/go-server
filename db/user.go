@@ -6,6 +6,8 @@ import (
 	"log"
 	"time"
 
+	"connectrpc.com/connect"
+	"github.com/go-webauthn/webauthn/webauthn"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -19,6 +21,12 @@ type User struct {
 	IsAdmin   bool       `gorm:"default:false" json:"isAdmin"`
 	CreatedAt *time.Time `json:"createdAt"`
 	UpdatedAt time.Time  `json:"updatedAt"`
+
+	// WebAuthn-specific fields
+	CredentialID        []byte `gorm:"type:bytea" json:"credentialID"`        // WebAuthn Credential ID
+	PublicKey           []byte `gorm:"type:bytea" json:"publicKey"`           // Public Key used for authentication
+	AuthenticatorAAGUID []byte `gorm:"type:bytea" json:"authenticatorAAGUID"` // Authenticator AAGUID
+	SignCount           uint32 `json:"signCount"`                             // Sign counter to prevent replay attacks
 }
 
 func (u *User) CreateAdmin(email string, password string, firstName string, lastName string) (string, error) {
@@ -37,7 +45,7 @@ func (u *User) CreateAdmin(email string, password string, firstName string, last
 	}
 
 	user.Password = string(hashedPassword)
-
+	fmt.Println(user)
 	if err := DBConn.Create(&user).Error; err != nil {
 		return "", err
 	}
@@ -47,13 +55,46 @@ func (u *User) CreateAdmin(email string, password string, firstName string, last
 	return user.UserId, nil
 }
 
+func (u *User) CreateWebAuthnAdmin(webAuthnUser *User) (string, error) {
+	webAuthnUser.IsAdmin = true
+	// fmt.Println(webAuthnUser, &webAuthnUser)
+	var copyuser *User
+	var publickey struct {
+		PublicKey []byte
+	}
+	fmt.Println("user key", webAuthnUser.PublicKey)
+	DBConn.Where("user_id = ?", "214966e6-2708-41b8-8aa1-d7b42c702aea").Select("public_key").Scan(&publickey)
+	fmt.Println("db key", publickey)
+	fmt.Println(copyuser)
+	if err := DBConn.Create(&webAuthnUser).Error; err != nil {
+		return "", err
+	}
+
+	QueueShardWrite(*webAuthnUser)
+
+	return webAuthnUser.UserId, nil
+}
+
 func (u *User) LoginAsAdmin(email string, password string) (*User, error) {
+
 	if err := DBConn.Where("email = ? AND is_admin = ?", email, true).First(&u).Error; err != nil {
-		return nil, errors.New("user not found")
+		fmt.Println(err)
+		return nil, connect.NewError(connect.CodeUnauthenticated, errors.New("user not found"))
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password)); err != nil {
-		return nil, errors.New("password is incorrect")
+		fmt.Println(err)
+
+		return nil, connect.NewError(connect.CodeUnauthenticated, errors.New("password is incorrect"))
+	}
+
+	return u, nil
+}
+
+func (u *User) LoginAsWebAuthAdmin(userId string) (*User, error) {
+	if err := DBConn.Where("user_id = ? AND is_admin = ?", userId, true).First(&u).Error; err != nil {
+		fmt.Println(err)
+		return nil, connect.NewError(connect.CodeUnauthenticated, errors.New("user not found"))
 	}
 
 	return u, nil
@@ -123,4 +164,26 @@ func CheckIfRefreshTokenIsRevokedByUserId(userId string) (string, error) {
 	}
 
 	return refreshToken.JTI, nil
+}
+
+// Implement WebAuthn User interface for the User struct
+func (u *User) WebAuthnID() []byte {
+	return []byte(u.UserId) // Use UUID as the WebAuthn ID
+}
+
+func (u *User) WebAuthnName() string {
+	return u.Email // Use the email address as the WebAuthn name
+}
+
+func (u *User) WebAuthnDisplayName() string {
+	return u.FirstName + " " + u.LastName // Full name for display
+}
+
+func (u *User) WebAuthnCredentials() []webauthn.Credential {
+	return []webauthn.Credential{
+		{
+			ID:        u.CredentialID,
+			PublicKey: u.PublicKey,
+		},
+	}
 }

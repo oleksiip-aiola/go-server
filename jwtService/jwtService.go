@@ -92,6 +92,34 @@ func SetAccessTokenCookie(c *fiber.Ctx, token string) {
 	})
 }
 
+func GetConnectRpcAccessTokenCookie(token string) string {
+	publicUrl := os.Getenv("PUBLIC_URL")
+	publicDomain := os.Getenv("PUBLIC_DOMAIN")
+
+	sameSite := "Lax"
+	secure := false
+	domain := "localhost"
+
+	if publicUrl != "" {
+		secure = true
+		domain = publicDomain
+	}
+
+	cookieName := os.Getenv("ACCESS_TOKEN_COOKIE_NAME")
+	cookieValue := token
+	expires := time.Now().Add(REFRESH_TOKEN_EXPIRATION).Format(time.RFC1123) // Cookie expiry formatted to a standard HTTP date
+
+	// Construct the cookie as a string
+	cookieStr := fmt.Sprintf("%s=%s; Expires=%s; HttpOnly; SameSite=%s; Domain=%s; Path=/",
+		cookieName, cookieValue, expires, sameSite, domain)
+
+	if secure {
+		cookieStr += "; Secure"
+	}
+
+	return cookieStr
+}
+
 func DeleteAccessTokenCookie(c *fiber.Ctx) {
 	publicDomain := os.Getenv("PUBLIC_DOMAIN")
 	publicUrl := os.Getenv("PUBLIC_URL")

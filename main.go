@@ -8,9 +8,9 @@ import (
 	"syscall"
 	"time"
 
+	connectrpc "github.com/alexey-petrov/go-server/cmd/server"
 	"github.com/alexey-petrov/go-server/db"
 	"github.com/alexey-petrov/go-server/routes"
-	"github.com/alexey-petrov/go-server/utils"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/compress"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -24,7 +24,6 @@ func establishdbConnection() {
 
 	db.CreateTable()
 	db.CreateJTITable()
-	db.CreateSearchSettingsTable()
 
 	//Glow up
 	db.CreateUserMoodRecordsTable()
@@ -48,22 +47,27 @@ func main() {
 		allowedOrigins = fmt.Sprintf("%s, %s", allowedOrigins, publicUrl)
 	}
 
-	app.Use(cors.New(cors.Config{
+	app.Options("*", cors.New(cors.Config{
 		AllowOrigins:     allowedOrigins,
-		AllowHeaders:     "Origin, Content-Type, Accept, Authorization, Set-Cookie",
+		AllowMethods:     "GET, POST, OPTIONS",
+		AllowHeaders:     "Origin, Content-Type, Accept, Authorization, Set-Cookie, connect-protocol-version",
 		AllowCredentials: true,
 	}))
 
-	app.Options("*", cors.New(cors.Config{
+	app.Use(cors.New(cors.Config{
 		AllowOrigins:     allowedOrigins,
-		AllowHeaders:     "Origin, Content-Type, Accept, Authorization, Set-Cookie",
+		AllowHeaders:     "Origin, Content-Type, Accept, Authorization, Set-Cookie, connect-protocol-version",
+		AllowMethods:     "GET, POST, OPTIONS",
 		AllowCredentials: true,
 	}))
 
 	app.Use(compress.New())
 
 	routes.SetRoutes(app)
-	utils.StartCronJobs()
+
+	// Launch a standalone RPC server
+	go connectrpc.ConnectRPC()
+
 	handleLogFatal(app)
 
 	go func() {
@@ -75,11 +79,11 @@ func main() {
 	c := make(chan os.Signal, 1)
 
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-
 	<-c // Block the main thread until a signal is received/interrupted
 
 	app.Shutdown()
 	fmt.Println("Shutting down the server")
+
 }
 
 func handleLogFatal(app *fiber.App) {

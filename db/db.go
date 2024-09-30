@@ -65,7 +65,7 @@ func InitDB() {
 		panic("Failed to create extension!")
 	}
 
-	err = DBConn.AutoMigrate(&User{}, &SearchSettings{}, &CrawledUrl{}, &SearchIndex{}, &MoodScore{}, &RefreshToken{})
+	err = DBConn.AutoMigrate(&User{}, &MoodScore{}, &RefreshToken{})
 
 	if err != nil {
 		fmt.Println("Failed to migrate database!")
@@ -76,7 +76,7 @@ func InitDB() {
 		if err != nil {
 			panic("Failed to create extension!")
 		}
-		err = shard.AutoMigrate(&User{}, &SearchSettings{}, &CrawledUrl{}, &SearchIndex{}, &MoodScore{}, &RefreshToken{})
+		err = shard.AutoMigrate(&User{}, &MoodScore{}, &RefreshToken{})
 		if err != nil {
 			fmt.Println("Failed to migrate shard database!")
 			panic(err)
@@ -119,7 +119,7 @@ func writeToShard(user User) {
 	shardID := determineShardByUserID(user.UserId)
 	shardDB := shardDBs[shardID]
 	// Write user data to the selected shard
-	if err := shardDB.Clauses(clause.OnConflict{DoNothing: true}).Create(&user).Error; err != nil {
+	if err := shardDB.Clauses(clause.OnConflict{DoNothing: true}).Save(&user).Error; err != nil {
 		log.Printf("Failed to write to shard DB %d: %v", shardID, err)
 	} else {
 		// @TODO Add exact shard name
@@ -194,23 +194,6 @@ func CreateJTITable() {
 	fmt.Println("Refresh Tokens Table created successfully!")
 }
 
-func CreateSearchSettingsTable() {
-	query := `
-	CREATE TABLE IF NOT EXISTS search_settings (
-    	id SERIAL PRIMARY KEY,
-    	amount INTEGER NOT NULL,
-		updated_at TIMESTAMPTZ NOT NULL,
-    	search_on BOOLEAN DEFAULT FALSE,
-    	add_new BOOLEAN DEFAULT FALSE
-	);`
-
-	if err := DBConn.Exec(query).Error; err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Println("Search settings Table created successfully!")
-}
-
 func CreateUserMoodRecordsTable() {
 	query := `
 	CREATE TABLE IF NOT EXISTS user_mood_records (
@@ -228,7 +211,7 @@ func CreateUserMoodRecordsTable() {
 		log.Fatal(err)
 	}
 
-	fmt.Println("Search settings Table created successfully!")
+	fmt.Println("user mood table created!")
 }
 
 func GetDB() *gorm.DB {

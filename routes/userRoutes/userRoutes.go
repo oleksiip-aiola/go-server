@@ -3,7 +3,7 @@ package userRoutes
 import (
 	"fmt"
 
-	"github.com/alexey-petrov/go-server/auth"
+	auth "github.com/alexey-petrov/go-server/authService"
 	"github.com/alexey-petrov/go-server/jwtService"
 	"github.com/alexey-petrov/go-server/structs"
 	"github.com/gofiber/fiber/v2"
@@ -11,6 +11,7 @@ import (
 )
 
 func UserRoutes(app *fiber.App) {
+	fmt.Println("user routes")
 	app.Post("api/register", func(c *fiber.Ctx) error {
 
 		user := &auth.User{}
@@ -40,7 +41,8 @@ func UserRoutes(app *fiber.App) {
 		})
 	})
 
-	app.Post("api/login", handleLogin)
+	// // Optionally handle OPTIONS for CORS requests
+
 	app.Post("api/refresh-token", handleRefreshToken)
 	app.Post("api/logout", handleLogout)
 }
@@ -86,27 +88,6 @@ func handleRefreshToken(c *fiber.Ctx) error {
 			"error": "Failed to generate JWT",
 		})
 	}
-
-	return c.JSON(fiber.Map{
-		"access_token": accessToken,
-	})
-}
-
-func handleLogin(c *fiber.Ctx) error {
-	user := &structs.User{}
-	fmt.Println("LOGIN")
-	if err := c.BodyParser(user); err != nil {
-		return err
-	}
-
-	accessToken, err := auth.Login(c, user.Email, user.Password)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to generate JWT",
-		})
-	}
-
-	jwtService.SetAccessTokenCookie(c, accessToken)
 
 	return c.JSON(fiber.Map{
 		"access_token": accessToken,
