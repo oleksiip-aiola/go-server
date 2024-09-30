@@ -230,7 +230,7 @@ func GenerateJWTPair(userId string) (string, error) {
 	userData, _ := db.GetUserById(userId)
 
 	// Store the JTI in the database
-	err = db.StoreJTI(refreshToken, userData.UserId, expirationTime.Format(time.RFC3339))
+	err = db.StoreJTI(refreshToken, userData.UserId, expirationTime.Format(time.RFC3339), accessToken)
 	if err != nil {
 		return "", err
 	}
@@ -308,6 +308,11 @@ func VerifyToken(token string) (*jwt.Token, error) {
 	if !parsedToken.Valid {
 		return nil, errors.New("invalid JWT token")
 	}
+
+	if err := db.DBConn.Table("refresh_tokens").Where("access_token = ?", parsedToken).Error; err != nil {
+		return nil, errors.New("access token is invalid")
+	}
+
 	// Return the parsed token
 	return parsedToken, nil
 }

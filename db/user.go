@@ -122,19 +122,21 @@ func GetUserById(id string) (User, error) {
 }
 
 type RefreshToken struct {
-	ID        string `gorm:"type:uuid;default:uuid_generate_v4()" json:"id"`
-	UserID    string `json:"userID"`
-	JTI       string `json:"jti"`
-	Expiry    string `json:"expiry"`
-	IsRevoked bool   `json:"isRevoked"`
+	ID          string `gorm:"type:uuid;default:uuid_generate_v4()" json:"id"`
+	UserID      string `json:"userID"`
+	JTI         string `json:"jti"`
+	AccessToken string `json:"accessToken"`
+	Expiry      string `json:"expiry"`
+	IsRevoked   bool   `json:"isRevoked"`
 }
 
-func StoreJTI(jti string, userID string, refreshTokenExp string) error {
+func StoreJTI(jti string, userID string, refreshTokenExp string, accessToken string) error {
 	refreshToken := RefreshToken{
-		UserID:    userID,
-		JTI:       jti,
-		Expiry:    refreshTokenExp,
-		IsRevoked: false,
+		UserID:      userID,
+		JTI:         jti,
+		Expiry:      refreshTokenExp,
+		IsRevoked:   false,
+		AccessToken: accessToken,
 	}
 
 	if err := DBConn.Table("refresh_tokens").Create(&refreshToken).Error; err != nil {
