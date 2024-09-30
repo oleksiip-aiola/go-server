@@ -78,11 +78,11 @@ func ConnectRPC() {
 		// Call the next handler with the updated context
 		handler.ServeHTTP(w, r.WithContext(ctx))
 	})
-	fmt.Println("ConnectRPC is serving at :8080")
+	fmt.Println("ConnectRPC is serving at :4000")
 	mux.Handle(path, corsHandler)
 
 	http.ListenAndServe(
-		"localhost:8080",
+		"localhost:4000",
 		// Use h2c so we can serve HTTP/2 without TLS.
 		h2c.NewHandler(mux, &http2.Server{}),
 	)

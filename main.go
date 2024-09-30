@@ -8,10 +8,9 @@ import (
 	"syscall"
 	"time"
 
+	connectrpc "github.com/alexey-petrov/go-server/cmd/server"
 	"github.com/alexey-petrov/go-server/db"
-	"github.com/alexey-petrov/go-server/routes"
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/compress"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/joho/godotenv"
 )
@@ -60,20 +59,20 @@ func main() {
 		AllowCredentials: true,
 	}))
 
-	app.Use(compress.New())
+	// app.Use(compress.New())
 
-	routes.SetRoutes(app)
+	// routes.SetRoutes(app)
 
 	// Launch a standalone RPC server
-	// go connectrpc.ConnectRPC()
+	go connectrpc.ConnectRPC()
 
-	handleLogFatal(app)
+	// handleLogFatal(app)
 
-	go func() {
-		if error := app.Listen(":" + os.Getenv("PORT")); error != nil {
-			log.Panic(error)
-		}
-	}()
+	// go func() {
+	// 	if error := app.Listen(":" + os.Getenv("PORT")); error != nil {
+	// 		log.Panic(error)
+	// 	}
+	// }()
 
 	c := make(chan os.Signal, 1)
 
