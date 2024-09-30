@@ -70,6 +70,10 @@ func ConnectRPC() {
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, Set-Cookie, connect-protocol-version")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 
+		if r.Method == "OPTIONS" {
+			return
+		}
+
 		ctx := context.WithValue(r.Context(), keys.HttpRequestKey, keys.HttpRequestResponse{Request: r, Response: w})
 		// Call the next handler with the updated context
 		handler.ServeHTTP(w, r.WithContext(ctx))
