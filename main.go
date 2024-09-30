@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	connectrpc "github.com/alexey-petrov/go-server/cmd/server"
 	"github.com/alexey-petrov/go-server/db"
 	"github.com/alexey-petrov/go-server/routes"
 	"github.com/gofiber/fiber/v2"
@@ -65,7 +66,7 @@ func main() {
 	routes.SetRoutes(app)
 
 	// Launch a standalone RPC server
-	// go connectrpc.ConnectRPC()
+	go connectrpc.ConnectRPC()
 
 	handleLogFatal(app)
 
