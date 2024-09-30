@@ -3,24 +3,51 @@ package userRoutes
 import (
 	"fmt"
 
-	auth "github.com/alexey-petrov/go-server/authService"
+	"github.com/alexey-petrov/go-server/db"
 	"github.com/alexey-petrov/go-server/jwtService"
 	"github.com/alexey-petrov/go-server/structs"
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 )
 
+type User struct {
+	Email     string `json:"email"`
+	Password  string `json:"password"`
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
+}
+
+func Auth(user User) (string, error) {
+	var err error
+
+	gormUser := db.User{}
+	id, err := gormUser.CreateAdmin(user.Email, user.Password, user.FirstName, user.LastName)
+
+	if err != nil {
+		return "", err
+	}
+
+	token, err := jwtService.GenerateJWTPair(id)
+
+	if err != nil {
+		fmt.Println("Error generating JWT:", err)
+		return "", err
+	}
+
+	return token, err
+}
+
 func UserRoutes(app *fiber.App) {
 	fmt.Println("user routes")
 	app.Post("api/register", func(c *fiber.Ctx) error {
 
-		user := &auth.User{}
+		user := &User{}
 
 		if err := c.BodyParser(user); err != nil {
 			return err
 		}
 
-		token, err := auth.Auth(*user)
+		token, err := Auth(*user)
 
 		if err != nil {
 			if err == gorm.ErrDuplicatedKey {
