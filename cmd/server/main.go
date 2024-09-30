@@ -58,6 +58,7 @@ func ConnectRPC() {
 	mux := http.NewServeMux()
 	interceptors := connect.WithInterceptors(NewAuthInterceptor())
 	path, handler := authv1connect.NewAuthServiceHandler(auth, interceptors)
+	fmt.Println(publicUrl)
 	corsHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if publicUrl != "" {
 			w.Header().Set("Access-Control-Allow-Origin", publicUrl)
