@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"connectrpc.com/connect"
 	"golang.org/x/net/http2"
@@ -51,12 +52,19 @@ func NewAuthInterceptor() connect.UnaryInterceptorFunc {
 }
 
 func ConnectRPC() {
+	publicUrl := os.Getenv("PUBLIC_URL")
+
 	auth := &auth.AuthServiceServer{}
 	mux := http.NewServeMux()
 	interceptors := connect.WithInterceptors(NewAuthInterceptor())
 	path, handler := authv1connect.NewAuthServiceHandler(auth, interceptors)
 	corsHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+		if publicUrl != "" {
+			w.Header().Set("Access-Control-Allow-Origin", publicUrl)
+
+		} else {
+			w.Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
+		}
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, Set-Cookie, connect-protocol-version")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
