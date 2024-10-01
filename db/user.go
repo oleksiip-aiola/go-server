@@ -14,7 +14,7 @@ import (
 
 type User struct {
 	UserId    string     `gorm:"type:uuid;default:uuid_generate_v4()" json:"userId"`
-	Email     string     `gorm:"unique" json:"email"`
+	Email     string     `gorm:"unique;default:uuid_generate_v4()" json:"email"`
 	FirstName string     `json:"firstName"`
 	LastName  string     `json:"lastName"`
 	Password  string     `json:"-"`
@@ -58,14 +58,7 @@ func (u *User) CreateAdmin(email string, password string, firstName string, last
 func (u *User) CreateWebAuthnAdmin(webAuthnUser *User) (string, error) {
 	webAuthnUser.IsAdmin = true
 	// fmt.Println(webAuthnUser, &webAuthnUser)
-	var copyuser *User
-	var publickey struct {
-		PublicKey []byte
-	}
-	fmt.Println("user key", webAuthnUser.PublicKey)
-	DBConn.Where("user_id = ?", "214966e6-2708-41b8-8aa1-d7b42c702aea").Select("public_key").Scan(&publickey)
-	fmt.Println("db key", publickey)
-	fmt.Println(copyuser)
+
 	if err := DBConn.Create(&webAuthnUser).Error; err != nil {
 		return "", err
 	}

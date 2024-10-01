@@ -153,18 +153,62 @@ func main() {
 	// 	secondEngine: gasEngine{mpg: 2, gallons: 3},
 	// }
 
-	y := getValue()
+	// y := getValue()
 
-	fmt.Println(*y / 2)
+	// fmt.Println(*y / 2)
 
-	strslice := []int{1, 2, 3, 4, 5, 6}
+	// strslice := []int{1, 2, 3, 4, 5, 6}
 
-	strsliced := strslice[1:3]
-	fmt.Println(strsliced)
+	// strsliced := strslice[1:3]
+	// fmt.Println(strsliced)
+
+	fmt.Println(fibo(12))
+	fmt.Println(fibAppend(12))
+	fmt.Println(recursiveFibo(12, nil))
+
 }
 
 func getValue() *int {
 	x := 2
 
 	return &x
+
+}
+
+func fibo(val int) []int {
+	slice := make([]int, val)
+	for i := range slice {
+		if i < 2 {
+			slice[i] = i
+			continue
+		}
+		slice[i] = slice[i-1] + slice[i-2]
+	}
+
+	return slice
+}
+
+func fibAppend(val int) []int {
+	slice := []int{0, 1}
+
+	for len(slice) < val {
+		slice = append(slice, slice[len(slice)-1]+slice[len(slice)-2])
+	}
+
+	return slice
+}
+
+func recursiveFibo[T []int](val int, sum T) []int {
+	slice := sum
+
+	if sum == nil {
+		sum = []int{0, 1}
+	}
+
+	if len(sum) == val {
+		return sum
+	}
+	slice = append(slice, slice[len(slice)-1]+slice[len(slice)-2])
+	return recursiveFibo(val, slice)
+
 }
