@@ -3,10 +3,10 @@ package userRoutes
 import (
 	"fmt"
 
-	"github.com/alexey-petrov/go-server/db"
-	"github.com/alexey-petrov/go-server/jwtService"
-	"github.com/alexey-petrov/go-server/structs"
 	"github.com/gofiber/fiber/v2"
+	"github.com/oleksiip-aiola/go-server/db"
+	"github.com/oleksiip-aiola/go-server/jwtService"
+	"github.com/oleksiip-aiola/go-server/structs"
 	"gorm.io/gorm"
 )
 
@@ -71,7 +71,10 @@ func UserRoutes(app *fiber.App) {
 	// // Optionally handle OPTIONS for CORS requests
 
 	app.Post("api/refresh-token", handleRefreshToken)
+	app.Post("api/verify", handleRefreshToken)
 	app.Post("api/logout", handleLogout)
+
+	app.Post("api/")
 }
 
 type LogoutStruct struct {

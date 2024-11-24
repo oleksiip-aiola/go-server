@@ -8,10 +8,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/alexey-petrov/go-server/config"
-	"github.com/alexey-petrov/go-server/db"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/oleksiip-aiola/go-server/config"
+	"github.com/oleksiip-aiola/go-server/db"
 	"gorm.io/gorm"
 )
 

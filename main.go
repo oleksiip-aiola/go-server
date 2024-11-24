@@ -8,12 +8,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/alexey-petrov/go-server/db"
-	"github.com/alexey-petrov/go-server/routes"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/compress"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/joho/godotenv"
+	"github.com/oleksiip-aiola/go-server/db"
+	"github.com/oleksiip-aiola/go-server/routes"
 )
 
 func establishdbConnection() {

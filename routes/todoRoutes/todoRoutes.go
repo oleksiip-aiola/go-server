@@ -3,9 +3,9 @@ package todoRoutes
 import (
 	"fmt"
 
-	"github.com/alexey-petrov/go-server/jwtService"
-	"github.com/alexey-petrov/go-server/structs"
 	"github.com/gofiber/fiber/v2"
+	"github.com/oleksiip-aiola/go-server/jwtService"
+	"github.com/oleksiip-aiola/go-server/structs"
 )
 
 func findTodoIndexByID(id int, todos []structs.Todo) int {

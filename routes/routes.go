@@ -1,10 +1,10 @@
 package routes
 
 import (
-	"github.com/alexey-petrov/go-server/routes/glowUpRoutes"
-	"github.com/alexey-petrov/go-server/routes/todoRoutes"
-	"github.com/alexey-petrov/go-server/routes/userRoutes"
 	"github.com/gofiber/fiber/v2"
+	"github.com/oleksiip-aiola/go-server/routes/glowUpRoutes"
+	"github.com/oleksiip-aiola/go-server/routes/todoRoutes"
+	"github.com/oleksiip-aiola/go-server/routes/userRoutes"
 )
 
 func SetRoutes(app *fiber.App) {

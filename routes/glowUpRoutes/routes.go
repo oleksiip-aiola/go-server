@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/alexey-petrov/go-server/db"
 	"github.com/gofiber/fiber/v2"
+	"github.com/oleksiip-aiola/go-server/db"
 )
 
 func InitGlowUpRoutes(app *fiber.App) {
